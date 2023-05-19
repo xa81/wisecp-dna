@@ -1,4 +1,14 @@
 <?php
+/**
+ * DomainNameAPI Registrar Module
+ * @package    coremio/modules/Registrars/DomainNameAPI
+ * @version    1.0.4
+ * @since      File available since Release 7.0.0
+ * @license    MIT License https://opensource.org/licenses/MIT
+ * @link       https://visecp.com/
+ * @author     https://visecp.com/
+ * @maintainer Bünyamin AKÇAY<bunyamin@bunyam.in>
+ */
 
 class DomainNameAPI {
     public  $api     = false;
@@ -39,6 +49,10 @@ class DomainNameAPI {
         $this->tmode    = $tmode;
     }
 
+    /**
+     * Set credentials
+     * @return bool
+     */
     private function set_credentials() {
         if ($this->api)
             return false;
@@ -51,6 +65,10 @@ class DomainNameAPI {
         return $this;
     }
 
+    /**
+     * Set config
+     * @return string
+     */
     private function setConfig($username, $password, $tmode) {
         $this->config["settings"]["username"]  = $username;
         $this->config["settings"]["password"]  = $password;
@@ -59,6 +77,11 @@ class DomainNameAPI {
         $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($username, $password, $tmode);
     }
 
+    /**
+     * Test connection
+     * @param $config
+     * @return bool
+     */
     public function testConnection($config = []) {
         $username = $config["settings"]["username"];
         $password = $config["settings"]["password"];
@@ -82,6 +105,10 @@ class DomainNameAPI {
         return true;
     }
 
+    /**
+     * Get TLDs
+     * @return array
+     */
     public function questioning($sld = NULL, $tlds = []) {
         $this->set_credentials();
         if ($sld == '' || empty($tlds)) {
@@ -111,6 +138,19 @@ class DomainNameAPI {
         return $result;
     }
 
+
+    /**
+     * Register domain
+     * @param $domain
+     * @param $sld
+     * @param $tld
+     * @param $year
+     * @param $dns
+     * @param $whois
+     * @param $wprivacy
+     * @param $tcode
+     * @return array|array[]|false|string[]
+     */
     public function register($domain = '', $sld = '', $tld = '', $year = 1, $dns = [], $whois = [], $wprivacy = false, $tcode = NULL) {
         $this->set_credentials();
         $detail = $this->api->GetDetails($domain);
@@ -193,6 +233,17 @@ class DomainNameAPI {
 
     }
 
+    /**
+     * Renew domain
+     * @param $params
+     * @param $domain
+     * @param $sld
+     * @param $tld
+     * @param $year
+     * @param $oduedate
+     * @param $nduedate
+     * @return bool
+     */
     public function renewal($params = [], $domain = '', $sld = '', $tld = '', $year = 1, $oduedate = '', $nduedate = '') {
         $this->set_credentials();
         $OrderDetails = $this->api->getDetails($domain);
@@ -210,6 +261,19 @@ class DomainNameAPI {
         return true;
     }
 
+
+    /**
+     * Transfer domain
+     * @param $domain
+     * @param $sld
+     * @param $tld
+     * @param $year
+     * @param $dns
+     * @param $whois
+     * @param $wprivacy
+     * @param $tcode
+     * @return array|false
+     */
     public function transfer($domain = '', $sld = '', $tld = '', $year = 1, $dns = [], $whois = [], $wprivacy = false, $tcode = '') {
         $this->set_credentials();
         $detail = $this->api->GetDetails($domain);
@@ -247,6 +311,11 @@ class DomainNameAPI {
         return $returnData;
     }
 
+    /**
+     * Nameserver Details
+     * @param $params
+     * @return array|false
+     */
     public function NsDetails($params = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -268,6 +337,12 @@ class DomainNameAPI {
         return $returns;
     }
 
+    /**
+     * Modify Nameservers
+     * @param $params
+     * @param $dns
+     * @return bool
+     */
     public function ModifyDns($params = [], $dns = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -295,6 +370,12 @@ class DomainNameAPI {
         return true;
     }
 
+
+    /**
+     * Child Nameserver Details
+     * @param array $params
+     * @return bool
+     */
     public function CNSList($params = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -323,6 +404,14 @@ class DomainNameAPI {
             return [];
     }
 
+
+    /**
+     * Add Child Nameserver
+     * @param $params
+     * @param $ns
+     * @param $ip
+     * @return array|false|string[]
+     */
     public function addCNS($params = [], $ns = '', $ip = '') {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -345,6 +434,14 @@ class DomainNameAPI {
         ];
     }
 
+    /**
+     * Modify Child Nameserver
+     * @param $params
+     * @param $cns
+     * @param $ns
+     * @param $ip
+     * @return bool
+     */
     public function ModifyCNS($params = [], $cns = [], $ns = '', $ip = '') {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -366,6 +463,14 @@ class DomainNameAPI {
         return true;
     }
 
+
+    /**
+     * Delete Child Nameserver
+     * @param $params
+     * @param $cns
+     * @param $ip
+     * @return bool
+     */
     public function DeleteCNS($params = [], $cns = '', $ip = '') {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -384,6 +489,11 @@ class DomainNameAPI {
         return true;
     }
 
+    /**
+     * Get Whois Privacy
+     * @param array $params
+     * @return string
+     */
     public function getWhoisPrivacy($params = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -396,6 +506,12 @@ class DomainNameAPI {
         return $OrderDetails["data"]["PrivacyProtectionStatus"] ? "active" : "passive";
     }
 
+    /**
+     * Modify Whois Privacy
+     * @param $params
+     * @param $whois
+     * @return bool
+     */
     public function ModifyWhois($params = [], $whois = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -413,6 +529,12 @@ class DomainNameAPI {
         return true;
     }
 
+    /**
+     * Set Contact Details
+     * @param array $data
+     * @param string $type
+     * @return array
+     */
     public function contactProcess($data = [], $type = 'Contact') {
         $this->set_credentials();
         if (isset($data["registrant"])) {
@@ -467,6 +589,12 @@ class DomainNameAPI {
 
     }
 
+
+    /**
+     * Get Transfer Lock
+     * @param $params
+     * @return array
+     */
     public function getTransferLock($params = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -479,6 +607,11 @@ class DomainNameAPI {
         return $OrderDetails["data"]["LockStatus"] == "true";
     }
 
+    /**
+     * Check Active
+     * @param $params
+     * @return bool
+     */
     public function isInactive($params = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -490,6 +623,12 @@ class DomainNameAPI {
         return $OrderDetails["data"]["Status"] != "Active";
     }
 
+    /**
+     * Modify Transfer Lock
+     * @param $params
+     * @param $type
+     * @return bool
+     */
     public function ModifyTransferLock($params = [], $type = '') {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -509,6 +648,13 @@ class DomainNameAPI {
         return true;
     }
 
+
+    /**
+     * Modify Privacy Protection
+     * @param $params
+     * @param $staus
+     * @return bool
+     */
     public function modifyPrivacyProtection($params = [], $staus = false) {
         $this->set_credentials();
         $domain       = $params["domain"];
@@ -527,6 +673,11 @@ class DomainNameAPI {
         return true;
     }
 
+    /**
+     * Enable Privacy Protection
+     * @param $params
+     * @return bool
+     */
     public function purchasePrivacyProtection($params = []) {
         return $this->modifyPrivacyProtection($params, true);
     }
