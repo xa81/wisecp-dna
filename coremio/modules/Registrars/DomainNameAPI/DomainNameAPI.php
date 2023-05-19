@@ -72,10 +72,12 @@ class DomainNameAPI {
         $tmode    = false;
         $this->setConfig($username, $password, $tmode);
 
-        $check = $this->domains(true);
+            $check   = $this->api->GetResellerDetails();
 
-        if (!$check)
+            if($check["result"] != "OK"){
+                $this->error = $check["error"]["Details"];
             return false;
+            }
 
         return true;
     }
@@ -279,8 +281,9 @@ class DomainNameAPI {
 
         if ($dns) {
             $dns = array_values($dns);
-            foreach ($dns as $k => $dn)
+            foreach ($dns as $k => $dn) {
                 $new_dns["ns" . ($k + 1)] = $dn;
+            }
         }
 
         $modifyDns = $this->api->ModifyNameServer($domain, $new_dns);
@@ -1084,5 +1087,21 @@ class DomainNameAPI {
 
         return true;
     }
+
+        public function getDNABalance()
+        {
+            $this->set_credentials();
+
+            //$response = $this->api->GetCurrentBalance();
+            $response = $this->api->GetResellerDetails();
+
+
+            if($response["result"] != "OK"){
+                $this->error = $response["ErrorCode"]." : ".$response["error"];
+                return false;
+            }
+
+            return $response;
+        }
 
 }

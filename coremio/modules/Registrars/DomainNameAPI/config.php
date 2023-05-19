@@ -7,8 +7,8 @@ return [
     ],
     'settings' => [
         'whois-types'      => true,
-        'username'         => 'userx',
-        'password'         => '*nVjamRqWmRW*****',
+        'username'         => 'user',
+        'password'         => '********',
         'test-mode'        => 0,
         'whidden-amount'   => 0,
         'whidden-currency' => 4,

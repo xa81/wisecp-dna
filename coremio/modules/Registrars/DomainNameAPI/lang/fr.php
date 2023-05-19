@@ -1,9 +1,10 @@
-<?php 
+<?php
 return [
     'name'              => 'DomainNameAPI',
     'description'       => 'With Domainnameapi.com, one of the popular domain name registrars, all domain name transactions can be made instantaneously through the domain API. To do this, define your domainnameapi.com client account information in the following fields.',
     'import-tld-button' => 'Import',
     'fields'            => [
+        'balance'       => "Équilibre",
         'username'      => 'Reseller Utilisateur',
         'password'      => 'Reseller Mot de passe',
         'test-mode'     => 'Test Mode',

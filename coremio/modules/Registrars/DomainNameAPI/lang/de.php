@@ -1,9 +1,10 @@
-<?php 
+<?php
 return [
     'name'              => 'DomainNameAPI',
     'description'       => "Mit Domainnameapi.com, einem der beliebtesten Domainnamen-Registrare, k\xc3\xb6nnen alle Domainnamen-Transaktionen sofort \xc3\xbcber die Domain-API durchgef\xc3\xbchrt werden. Definieren Sie dazu in den folgenden Feldern Ihre Domainnameapi.com-Kundenkontoinformationen.",
     'import-tld-button' => 'Importieren',
     'fields'            => [
+        'balance'       => "Gleichgewicht",
         'username'      => 'Reseller-Benutzername',
         'password'      => 'Reseller Passwort',
         'test-mode'     => 'Test Mode',

@@ -1,9 +1,10 @@
-<?php 
+<?php
 return [
     'name'              => 'DomainNameAPI',
     'description'       => "Pop\xc3\xbcler alan ad\xc4\xb1 tescil firmalar\xc4\xb1ndan biri olan domainnameapi.com ile domain api \xc3\xbczerinden t\xc3\xbcm alan ad\xc4\xb1 i\xc5\x9flemlerini anl\xc4\xb1k olarak sa\xc4\x9flayabilirsiniz. Bunun i\xc3\xa7in domainnameapi.com m\xc3\xbc\xc5\x9fteri hesab\xc4\xb1 bilgilerinizi a\xc5\x9fa\xc4\x9f\xc4\xb1daki alanlara tan\xc4\xb1mlay\xc4\xb1n\xc4\xb1z.",
     'import-tld-button' => "\xc4\xb0\xc3\xa7eri Aktar",
     'fields'            => [
+        'balance'       => "Bakiye",
         'username'      => "Bayi Kullan\xc4\xb1c\xc4\xb1 Ad\xc4\xb1n\xc4\xb1z",
         'password'      => "Bayi \xc5\x9eifreniz",
         'test-mode'     => 'Test Modu',

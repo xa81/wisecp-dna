@@ -1,9 +1,10 @@
-<?php 
+<?php
 return [
     'name'              => 'DomainNameAPI',
     'description'       => 'Met domeinnameapi.com, een van de populaire domeinnaamregistrars, kunnen alle domeinnaamtransacties onmiddellijk worden uitgevoerd via de domein -API. Definieer hiervoor uw domainnameapi.com -clientaccountinformatie in de volgende velden.',
     'import-tld-button' => 'Importeren',
     'fields'            => [
+        'balance'       => "Evenwicht",
         'username'      => 'Reseller gebruikersnaam',
         'password'      => 'Reseller wachtwoord',
         'test-mode'     => 'Testmodus',
