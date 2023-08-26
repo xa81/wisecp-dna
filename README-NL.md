@@ -49,3 +49,18 @@ Deze module is een integratie van 'domainnameapi.com' voor WiseCP.
 2. U ziet een lijst met beschikbare domeinen. Selecteer het domein dat u wilt importeren en wijs het toe aan de gewenste klant, en klik vervolgens op de knop "Importeren".
 
 Dat is alles! U kunt nu de Domainnameapi-module succesvol gebruiken in WiseCP.
+
+
+
+## Terugkeer- en Foutcodes met Uitleg
+
+| Code | Uitleg                                          | Details                                                                                                                                                                     |
+|------|-------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1000 | Command completed successfully                  | Opdracht succesvol uitgevoerd                                                                                                                                               |
+| 1001 | Command completed successfully; action pending. | Opdracht succesvol uitgevoerd; actie in behandeling                                                                                                                         |
+| 2003 | Required parameter missing                      | Vereiste parameter ontbreekt. Bijvoorbeeld: Ontbrekend telefoonnummer in contactgegevens                                                                                    |
+| 2105 | Object is not eligible for renewal              | Object komt niet in aanmerking voor vernieuwing, update-acties vergrendeld. Status mag niet "clientupdateprohibited" zijn. Kan te wijten zijn aan andere statusvoorwaarden. |
+| 2200 | Authentication error                            | Authenticatiefout, autorisatiecode onjuist of domein is geregistreerd bij een andere registrar.                                                                             |
+| 2302 | Object exists                                   | Domeinnaam of nameserver-informatie bestaat al in de database. Kan niet worden geregistreerd.                                                                               |
+| 2303 | Object does not exist                           | Domeinnaam of nameserver-informatie bestaat niet in de database. Nieuwe registratie vereist.                                                                                |
+| 2304 | Object status prohibits operation               | Objectstatus verbiedt de actie, updates vergrendeld. Status mag niet "clientupdateprohibited" zijn. Kan te wijten zijn aan andere statusvoorwaarden.                        |

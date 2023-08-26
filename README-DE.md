@@ -49,3 +49,18 @@ Dieses Modul ist eine Integration von 'domainnameapi.com' für WiseCP.
 2. Sie sehen eine Liste der verfügbaren Domains. Wählen Sie die Domain aus, die Sie importieren möchten, und weisen Sie sie dem gewünschten Kunden zu, und klicken Sie dann auf die Schaltfläche "Importieren".
 
 Das war's! Sie können das Domainnameapi-Modul jetzt erfolgreich in WiseCP verwenden.
+
+
+
+## Rückgabe- und Fehlercodes mit Erklärungen
+
+| Code | Erklärung                                       | Details                                                                                                                                                                         |
+|------|-------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1000 | Command completed successfully                  | Befehl erfolgreich ausgeführt                                                                                                                                                   |
+| 1001 | Command completed successfully; action pending. | Befehl erfolgreich ausgeführt; Aktion ausstehend                                                                                                                                |
+| 2003 | Required parameter missing                      | Erforderlicher Parameter fehlt. Zum Beispiel: Telefonnummer in den Kontaktdaten fehlt                                                                                           |
+| 2105 | Object is not eligible for renewal              | Objekt ist nicht zur Verlängerung berechtigt, Update-Aktionen gesperrt. Der Status darf nicht "clientupdateprohibited" sein. Möglicherweise aufgrund anderer Statusbedingungen. |
+| 2200 | Authentication error                            | Authentifizierungsfehler, Berechtigungscode ungültig oder Domain ist bei einem anderen Registrar registriert.                                                                   |
+| 2302 | Object exists                                   | Domänenname oder Nameserver-Informationen sind bereits in der Datenbank vorhanden. Kann nicht registriert werden.                                                               |
+| 2303 | Object does not exist                           | Domänenname oder Nameserver-Informationen sind in der Datenbank nicht vorhanden. Neue Registrierung erforderlich.                                                               |
+| 2304 | Object status prohibits operation               | Objektstatus verbietet die Aktion, Updates gesperrt. Der Status darf nicht "clientupdateprohibited" sein. Möglicherweise aufgrund anderer Statusbedingungen.                    |

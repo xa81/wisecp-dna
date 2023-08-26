@@ -50,3 +50,18 @@ This module is an integration of 'domainnameapi.com' for WiseCP.
 
 That's it! You can now successfully use the Domainnameapi module in WiseCP.
 
+
+
+## Return and Error Codes with Explanations
+
+| Code | Explanation                                     | Details                                                                                                                                        |
+|------|-------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1000 | Command completed successfully                  | Command completed successfully                                                                                                                 |
+| 1001 | Command completed successfully; action pending. | Command completed successfully; action pending                                                                                                 |
+| 2003 | Required parameter missing                      | Required parameter missing. For example: Missing phone number in contact information                                                           |
+| 2105 | Object is not eligible for renewal              | Object is not eligible for renewal, update actions locked. Status must not be "clientupdateprohibited". May be due to other status conditions. |
+| 2200 | Authentication error                            | Authentication error, authorization code incorrect, or domain is registered with another registrar.                                            |
+| 2302 | Object exists                                   | Domain name or nameserver information already exists in the database. Cannot be registered.                                                    |
+| 2303 | Object does not exist                           | Domain name or nameserver information does not exist in the database. New registration required.                                               |
+| 2304 | Object status prohibits operation               | Object status prohibits the action, updates locked. Status must not be "clientupdateprohibited". May be due to other status conditions.        |
+
