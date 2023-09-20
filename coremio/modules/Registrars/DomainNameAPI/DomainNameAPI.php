@@ -2,7 +2,7 @@
 /**
  * DomainNameAPI Registrar Module
  * @package    coremio/modules/Registrars/DomainNameAPI
- * @version    1.0.4
+ * @version    1.0.5
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -276,11 +276,17 @@ class DomainNameAPI {
      */
     public function transfer($domain = '', $sld = '', $tld = '', $year = 1, $dns = [], $whois = [], $wprivacy = false, $tcode = '') {
         $this->set_credentials();
+        /*
+
+        validation responsibility assigned to registrar
+
         $detail = $this->api->GetDetails($domain);
         if ($detail["result"] == "OK") {
             $this->error = $domain . " already exists.";
             return false;
         }
+        */
+
 
         $response = $this->api->Transfer($domain, $tcode, $year);
 
