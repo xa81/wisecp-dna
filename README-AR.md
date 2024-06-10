@@ -10,7 +10,7 @@
 
 # دليل استخدام وحدة Domainnameapi
 
-هذه الوحدة هي تكامل 'domainnameapi.com' لـ WiseCP.
+هذه الوحدة هي تكامل 'domainnameapi.com' لـ WiseCP (آخر تحديث 11 يونيو 2024)
 
 
 ## المتطلبات

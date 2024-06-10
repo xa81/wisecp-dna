@@ -10,7 +10,7 @@
 
 # Domainnameapi Modulunun İstifadəsi üçün README
 
-Bu modul, WiseCP üçün 'domainnameapi.com' inteqrasiyasıdır.
+Bu modul, WiseCP üçün 'domainnameapi.com' inteqrasiyasıdır. (Son yeniləmə 11 iyun 2024)
 
 
 ## Tələblər

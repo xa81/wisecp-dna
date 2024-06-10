@@ -23,7 +23,7 @@ namespace DomainNameApi;
 
         private $_USERDATA_USERNAME = "ownername";
         private $_USERDATA_PASSWORD = "ownerpass";
-        private $_URL_SERVICE       = "https://wisecp.domainnameapi.com/DomainApi.svc";
+        private $_URL_SERVICE       = "https://whmcs.domainnameapi.com/DomainApi.svc";
         private $service;
 
 
