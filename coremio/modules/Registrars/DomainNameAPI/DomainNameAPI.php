@@ -264,6 +264,12 @@ class DomainNameAPI {
         }
 
         $handle = $this->api->Renew($domain, $year);
+
+        Modules::save_log("Registrars", __CLASS__, ucfirst(__FUNCTION__), [
+            'domain'    => $domain,
+            'year'      => $year,
+        ], $handle);
+
         if ($handle["result"] != "OK") {
             $this->error = $handle["error"]["Details"];
             return false;
@@ -300,6 +306,12 @@ class DomainNameAPI {
 
 
         $response = $this->api->Transfer($domain, $tcode, $year);
+
+        Modules::save_log("Registrars", __CLASS__, ucfirst(__FUNCTION__), [
+            'domain'    => $domain,
+            'year'      => $year,
+        ], $response);
+
 
         if ($response["result"] != "OK") {
             $this->error = $response["error"]["Details"];
