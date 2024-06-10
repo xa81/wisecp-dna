@@ -38,11 +38,12 @@ namespace DomainNameApi;
 
             // Create unique connection
             $this->service = new \SoapClient($this->_URL_SERVICE . "?singlewsdl", [
-                'trace'      => true,
-                "encoding"   => "UTF-8",
-                'features'   => SOAP_SINGLE_ELEMENT_ARRAYS,
-                'debug'      => true,
-                'exceptions' => true,
+                'trace'              => true,
+                "encoding"           => "UTF-8",
+                'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
+                'debug'              => true,
+                'exceptions'         => true,
+                'connection_timeout' => 25,
             ]);
 
         }
@@ -1628,11 +1629,6 @@ namespace DomainNameApi;
                 // SOAP method which is same as current function name called
                 $_response = $this->service->__soapCall($fn, [$parameters]);
 
-                //die(jsson_encode($_response));
-
-                //file_put_contents('_lastreq.txt',$this->service->__getLastRequest());
-                //print_r($this->service->__getLastRequestHeaders());
-                //print_r($this->service->__getLastResponseHeaders());
 
                 // Serialize as array
                 $_response = $this->objectToArray($_response);

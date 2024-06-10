@@ -117,10 +117,6 @@ class DomainNameAPI {
         }
         $response = $this->api->CheckAvailability([$sld], $tlds, 1, "create");
 
-        Modules::save_log("Registrars", __CLASS__, "check", [
-            'sld'  => $sld,
-            'tlds' => $tlds,
-        ], $response);
 
         $result = [];
         foreach ($response as $domain) {
@@ -209,7 +205,22 @@ class DomainNameAPI {
 
         }
 
+
+        Modules::save_log("Registrars", __CLASS__, "PreRegister", [
+            'domain'   => $domain,
+            'year'     => $year,
+            'start_at' => date('Y-m-d H:i:s'),
+        ], []);
+
         $response = $this->api->RegisterWithContactInfo($domain, $year, $whois, $dns, false, $wprivacy, $additional);
+
+        Modules::save_log("Registrars", __CLASS__, "Register", [
+            'domain'    => $domain,
+            'year'      => $year,
+            'whois'     => $whois,
+            'finish_at' => date('Y-m-d H:i:s'),
+        ], $response);
+
 
         if ($response["result"] != "OK") {
             $this->error = $response["error"]["Message"] . " : " . $response["error"]["Details"];
@@ -1245,7 +1256,7 @@ class DomainNameAPI {
         return true;
     }
 
-        public function getDNABalance()
+    public function getDNABalance()
         {
             $this->set_credentials();
 
