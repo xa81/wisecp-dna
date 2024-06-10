@@ -10,7 +10,7 @@
 
 # README for Domainnameapi Module
 
-This module is an integration of 'domainnameapi.com' for WiseCP.
+This module is an integration of 'domainnameapi.com' for WiseCP. (Last update 11 June 2024)
 
 
 ## Requirements

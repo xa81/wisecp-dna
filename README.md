@@ -10,7 +10,7 @@
 
 # Domainnameapi Modülü 
 
-Bu modül, WiseCP için geliştirilmiş bir 'domainnameapi.com' entegrasyonudur.
+Bu modül, WiseCP için geliştirilmiş bir 'domainnameapi.com' entegrasyonudur. (Güncelleme 11 Haziran 2024)
 
 ## Gereksinimler
 
