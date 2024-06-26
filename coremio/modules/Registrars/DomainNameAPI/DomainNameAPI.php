@@ -47,6 +47,9 @@ class DomainNameAPI {
         $this->username = $username;
         $this->password = $password;
         $this->tmode    = $tmode;
+
+
+
     }
 
     /**
@@ -927,11 +930,87 @@ class DomainNameAPI {
         return $result;
     }
 
+    public function domainsdt($pageNumber, $pageLength,$invalidation=0) {
+        $this->set_credentials();
+        Helper::Load(["User"]);
+
+       if ($invalidation==1){
+           $this->invalidateCache(["domainsdt","user_info_short_"]);
+       }
+
+        $listParams = [
+            'PageNumber' => $pageNumber,
+            'PageSize'   => $pageLength,
+            'OrderColumn'=>'Id',
+            'OrderDirection'=>'DESC',
+        ];
+
+        $response = $this->rememberCache("domainsdt_" . $pageNumber . "_" . $pageLength, function () use ($listParams) {
+            return $this->api->GetList($listParams);
+        }, 180);
+
+
+
+        if ($response["result"] != "OK") {
+            $this->error = $response["error"]["Message"] . " : " . $response["error"]["Details"];
+            return false;
+        }
+
+        $result = [
+            'data'            => [],
+            'total'    => 0,
+        ];
+        $user_data = [];
+
+        if (isset($response["data"]["Domains"]) && $response["data"]["Domains"]) {
+
+            $result['total'] = $response["TotalCount"];
+
+            foreach ($response["data"]["Domains"] as $res) {
+                $user_data[$res["DomainName"]] = [];
+
+                $user_data[$res["DomainName"]]['user_info'] = $this->rememberCache("user_info_short_" . $res["DomainName"],
+                    function () use ($res) {
+                        $is_imported = Models::$init->db->select("id,owner_id AS user_id")
+                                                        ->from("users_products");
+                        $is_imported->where("type", '=', "domain", "&&");
+                        $is_imported->where("options", 'LIKE', '%"domain":"' . $res["DomainName"] . '"%');
+                        $is_imported = $is_imported->build() ? $is_imported->getAssoc() : false;
+                        if ($is_imported) {
+                            $user_data= User::getData($is_imported["user_id"], "id,full_name,company_name", "array");
+                            $user_data['order_id']=$is_imported["id"];
+                            return $user_data;
+                        }
+                        return [];
+                    },180);
+            }
+
+
+            foreach ($response["data"]["Domains"] as $res) {
+                $cdate  = isset($res["Dates"]["Start"]) ? DateManager::format("Y-m-d H:i", $res["Dates"]["Start"]) : '';
+                $edate  = isset($res["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i", $res["Dates"]["Expiration"]) : '';
+                $domain = isset($res["DomainName"]) ? $res["DomainName"] : '';
+                if ($domain) {
+                    $order_id    = 0;
+                    if ($res["Status"] == "Active")
+                        $result['data'][] = [
+                            'domain'        => $domain,
+                            'creation_date' => $cdate,
+                            'end_date'      => $edate,
+                            'order_id'      => $user_data[$domain]['user_info']['order_id'] ?? 0,
+                            'user_data'     => $user_data[$domain]['user_info'],
+                        ];
+                }
+            }
+        }
+        return $result;
+    }
+
     public function import_domain($data = []) {
         $this->set_credentials();
         $config = $this->config;
 
-        $imports = [];
+        $imports = $results = [];
 
         Helper::Load([
             "Orders",
@@ -940,19 +1019,31 @@ class DomainNameAPI {
         ]);
 
         foreach ($data as $domain => $datum) {
+
+
+
+
             $domain_parse = Utility::domain_parser("http://" . $domain);
             $sld          = $domain_parse["host"];
             $tld          = $domain_parse["tld"];
             $user_id      = (int)$datum["user_id"];
-            if (!$user_id)
+            if (!$user_id){
                 continue;
-            $info = $this->get_info([
-                'domain' => $domain,
-                'name'   => $sld,
-                'tld'    => $tld,
-            ]);
-            if (!$info)
+            }
+
+            $info = $this->rememberCache("domain_info_" . $domain, function () use ($domain, $tld, $sld) {
+                return $this->get_info([
+                    'domain' => $domain,
+                    'name'   => $sld,
+                    'tld'    => $tld,
+                ]);
+            }, 180);
+
+            if (!$info){
+                $results[$domain] = 'domain info not found';
                 continue;
+            }
+
 
             $user_data = User::getData($user_id, "id,lang", "array");
             $ulang     = $user_data["lang"];
@@ -960,6 +1051,7 @@ class DomainNameAPI {
             $productID = Models::$init->db->select("id")
                                           ->from("tldlist")
                                           ->where("name", "=", $tld);
+
             $productID = $productID->build() ? $productID->getObject()->id : false;
             if (!$productID)
                 continue;
@@ -1023,9 +1115,13 @@ class DomainNameAPI {
             ];
 
             $insert = Orders::insert($order_data);
-            if (!$insert)
+            if (!$insert){
+                $results[$domain] = 'order insert failed';
                 continue;
+            }
 
+            /*
+             * Possiblity slow down the system
             if (isset($options["whois_privacy"])) {
                 $amount = Money::exChange($this->whidden["amount"], $this->whidden["currency"], $productPrice_cid);
                 $start  = DateManager::Now();
@@ -1049,6 +1145,7 @@ class DomainNameAPI {
                     'unread'      => 1,
                 ]);
             }
+            */
             $imports[] = $order_data["name"] . " (#" . $insert . ")";
         }
 
@@ -1060,15 +1157,23 @@ class DomainNameAPI {
             ]);
         }
 
-        return $imports;
+        return $results;
     }
 
     public function cost_prices($type = 'domain') {
+
         $this->set_credentials();
+        $config = $this->config;
         if (!isset($this->config["settings"]["adp"]) || !$this->config["settings"]["adp"])
             return false;
 
-        $response = $this->api->GetTldList(999);
+        $response = $this->rememberCache("tld_list", function () {
+            return $this->api->GetTldList(999);
+        }, 180);
+
+
+
+
         if ($response["result"] != "OK" && isset($response["error"]["Details"]) && strlen($response["error"]["Details"]) >= 3) {
             $this->error = $response["error"]["Message"] . " : " . $response["error"]["Details"];
             return false;
@@ -1076,11 +1181,19 @@ class DomainNameAPI {
 
         $result = [];
 
+        $excluded_tlds = $config['settings']['exclude'] ? explode(',',$config['settings']['exclude']) : [];
+
         foreach ($response["data"] as $row) {
-            if ($row["status"] != "Active")
+            if ($row["status"] != "Active"){
                 continue;
-            if (!isset($row["pricing"]["registration"][1]))
+            }
+            if (in_array($row["tld"], $excluded_tlds)){
                 continue;
+            }
+
+            if (!isset($row["pricing"]["registration"][1])) {
+                continue;
+            }
 
             $result[$row["tld"]] = [
                 'register' => number_format(($row["pricing"]["registration"][1] ?? 0), 2, '.', ''),
@@ -1092,10 +1205,116 @@ class DomainNameAPI {
         return $result;
     }
 
-    public function apply_import_tlds() {
+    public function list_tlds() {
+        $this->set_credentials();
+        $config = $this->config;
+
+        $response = $this->rememberCache("tld_list", function () {
+            return $this->api->GetTldList(999);
+        }, 180);
+
+
+        if ($response["result"] != "OK") {
+            $this->error = $response["error"]["Message"] . " : " . $response["error"]["Details"];
+            return false;
+        }
+
+        Helper::Load([
+            "Products",
+            "Money"
+        ]);
+
+        $cost_cid    =  4;
+        $profit_rate = Config::get("options/domain-profit-rate");
+        $excluded_tlds = $config['settings']['exclude'] ? explode(',',$config['settings']['exclude']) : [];
+
+        $tld_arr = [];
+
+
+        foreach ($response["data"] as $row) {
+
+
+            if ($row["status"] != "Active")
+                continue;
+            if (!isset($row["pricing"]["registration"][1]))
+                continue;
+            $name = Utility::strtolower(trim($row["tld"]));
+
+            $tld_obj = [
+                'tld'                     => $name,
+                'module'                  => null,
+                'register_cost'           => number_format($row["pricing"]["registration"][1], 2),
+                'renewal_cost'            => number_format($row["pricing"]["renew"][1], 2),
+                'transfer_cost'           => number_format($row["pricing"]["transfer"][1], 2),
+                'register_current'        => null,
+                'renewal_current'         => null,
+                'transfer_current'        => null,
+                'register_margin'         => null,
+                'renewal_margin'          => null,
+                'transfer_margin'         => null,
+                'register_margin_percent' => null,
+                'renewal_margin_percent'  => null,
+                'transfer_margin_percent' => null,
+            ];
+
+
+            $check = Models::$init->db->select()->from("tldlist")->where("name", "=", $name);
+
+            if ($check->build()) {
+                $tld = $check->getAssoc();
+                $pid = $tld["id"];
+
+                $tld_obj['module'] = $tld["module"];
+
+                $reg_price = Products::get_price("register", "tld", $pid);
+                $ren_price = Products::get_price("renewal", "tld", $pid);
+                $tra_price = Products::get_price("transfer", "tld", $pid);
+
+                //currency_id
+                $reg_currency = $reg_price["cid"];
+                $ren_currency = $ren_price["cid"];
+                $tra_currency = $tra_price["cid"];
+                //amount
+                $reg_amount= $reg_price["amount"];
+                $ren_amount= $ren_price["amount"];
+                $tra_amount= $tra_price["amount"];
+
+                $tld_obj['register_current'] = number_format((Money::exChange($reg_amount, $reg_currency, $cost_cid)),2);
+                $tld_obj['renewal_current'] = number_format((Money::exChange($ren_amount, $ren_currency, $cost_cid)),2);
+                $tld_obj['transfer_current'] = number_format((Money::exChange($tra_amount, $tra_currency, $cost_cid)),2);
+
+            }
+
+            //calculate margin between current and cost as percentage
+            if($tld_obj['register_current']!==null && $tld_obj['register_cost']<>0){
+                $tld_obj['register_margin'] = floatval(number_format(($tld_obj['register_current'] - $tld_obj['register_cost']),2));
+                $tld_obj['register_margin_percent'] = intval(number_format((($tld_obj['register_margin'] / $tld_obj['register_cost']) * 100),0));
+            }
+            if($tld_obj['renewal_current']!==null && $tld_obj['renewal_cost']<>0){
+                $tld_obj['renewal_margin'] = floatval(number_format(($tld_obj['renewal_current'] - $tld_obj['renewal_cost']),2));
+                $tld_obj['renewal_margin_percent'] = intval(number_format((($tld_obj['renewal_margin'] / $tld_obj['renewal_cost']) * 100),0));
+            }
+            if($tld_obj['transfer_current']!==null && $tld_obj['transfer_cost']<>0){
+                $tld_obj['transfer_margin'] = floatval(number_format(($tld_obj['transfer_current'] - $tld_obj['transfer_cost']),2));
+                $tld_obj['transfer_margin_percent'] =intval(number_format(( ($tld_obj['transfer_margin'] / $tld_obj['transfer_cost']) * 100),0));
+            }
+
+            $tld_obj['excluded'] =in_array($name,$excluded_tlds);
+
+            $tld_arr[] = $tld_obj;
+
+
+        }
+
+        return ['tlds'          => $tld_arr];
+    }
+
+    public function apply_import_tlds($selected_tlds=[]) {
         $this->set_credentials();
 
-        $response = $this->api->GetTldList(999);
+        $response = $this->rememberCache("tld_list", function () {
+            return $this->api->GetTldList(999);
+        }, 180);
         if ($response["result"] != "OK") {
             $this->error = $response["error"]["Message"] . " : " . $response["error"]["Details"];
             return false;
@@ -1110,10 +1329,20 @@ class DomainNameAPI {
         $profit_rate = Config::get("options/domain-profit-rate");
 
         foreach ($response["data"] as $row) {
-            if ($row["status"] != "Active")
+            if(is_array($selected_tlds) && count($selected_tlds)>0){
+                if($row["tld"]!='' && !in_array($row["tld"],$selected_tlds)){
+                    continue;
+                }
+            }
+
+            if ($row["status"] != "Active"){
                 continue;
-            if (!isset($row["pricing"]["registration"][1]))
+            }
+
+            if (!isset($row["pricing"]["registration"][1])){
                 continue;
+            }
+
             $name = Utility::strtolower(trim($row["tld"]));
 
 
@@ -1269,19 +1498,82 @@ class DomainNameAPI {
     }
 
     public function getDNABalance()
-        {
-            $this->set_credentials();
+    {
+        $this->set_credentials();
 
-            //$response = $this->api->GetCurrentBalance();
-            $response = $this->api->GetResellerDetails();
+        $response = $this->api->GetResellerDetails();
 
-
-            if($response["result"] != "OK"){
-                $this->error = $response["ErrorCode"]." : ".$response["error"];
-                return false;
-            }
-
-            return $response;
+        if($response["result"] != "OK"){
+            $this->error = $response["ErrorCode"]." : ".$response["error"];
+            return false;
         }
+
+        return $response;
+    }
+
+
+    public function rememberCache($key, $function, $ttl = 3600)
+    {
+        //check table exist
+        $table_exists = Models::$init->db->query('SHOW TABLES LIKE "mod_dna_cache_elements"')
+                                         ->rowCount();
+        if ($table_exists !== 1) {
+            Models::$init->db->query('CREATE TABLE IF NOT EXISTS mod_dna_cache_elements (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(255),content LONGTEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME,INDEX index_cache_name (name) ); ')
+                             ->execute();
+        }
+
+        // Güvenli bir hash algoritması kullanın
+        $cache_key = "DNA-" . substr($key, 0, 10) . '_' . hash('sha256', $this->username . $this->password . '-' . $key);
+
+
+        $cache_object = Models::$init->db->select("name,content,updated_at")
+                                         ->from("mod_dna_cache_elements")
+                                         ->where("name", '=', $cache_key);
+
+        $cache_object = $cache_object->build() ? $cache_object->getAssoc() : false;
+
+        if (!$cache_object || time() > strtotime($cache_object["updated_at"]) + $ttl) {
+            $response = $function();
+
+            if (!isset($cache_object["name"])) {
+                Models::$init->db->insert("mod_dna_cache_elements", [
+                    'name'       => $cache_key,
+                    'content'    => base64_encode(serialize($response)),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+            } else {
+                Models::$init->db->update("mod_dna_cache_elements", [
+                    'content'    => base64_encode(serialize($response)),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ])
+                                 ->where("name", '=', $cache_key)
+                                 ->save();
+            }
+        } else {
+            $response = unserialize(base64_decode($cache_object["content"]));
+        }
+        return $response;
+    }
+
+    public function invalidateCache($key)
+    {
+        $invalidations = [];
+        if(is_string($key) ){
+            $invalidations[] = $key;
+        }elseif (is_array($key)){
+            $invalidations = $key;
+        }else{
+            return false;
+        }
+        if(count($invalidations) == 0){
+            return false;
+        }
+
+        foreach ($invalidations as $k => $v) {
+             $cache_key = "DNA-" . substr($v, 0, 10);
+             Models::$init->db->delete("mod_dna_cache_elements")->where("name", "LIKE", "{$cache_key}%")->run();
+        }
+
+    }
 
 }

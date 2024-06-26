@@ -38,12 +38,12 @@ namespace DomainNameApi;
 
             // Create unique connection
             $this->service = new \SoapClient($this->_URL_SERVICE . "?singlewsdl", [
-                'trace'              => true,
+                // 'trace'              => true,
                 "encoding"           => "UTF-8",
                 'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
-                'debug'              => true,
+                // 'debug'              => true,
                 'exceptions'         => true,
-                'connection_timeout' => 25,
+                'connection_timeout' => 20,
             ]);
 
         }
@@ -1616,6 +1616,7 @@ namespace DomainNameApi;
 
             return $result;
         }
+
 
         private function parseCall($fn,$parameters, $_callback){
 
