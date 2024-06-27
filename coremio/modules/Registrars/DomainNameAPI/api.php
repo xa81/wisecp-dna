@@ -23,29 +23,33 @@ namespace DomainNameApi;
 
         const VERSION = '2.0.13';
         private $dsn = 'https://d4e2d61e4af2d4c68fb21ab93bf51ff2@o4507492369039360.ingest.de.sentry.io/4507492373954640';
-
-        private $_USERDATA_USERNAME = "ownername";
-        private $_USERDATA_PASSWORD = "ownerpass";
-        private $_URL_SERVICE       = "https://whmcs.domainnameapi.com/DomainApi.svc";
+    private $serviceUsername = "ownername";
+    private $servicePassword = "ownerpass";
+    private $serviceUrl  = "https://whmcs.domainnameapi.com/DomainApi.svc";
+    public  $lastRequest  = [];
+    public  $lastResponse = [];
         private $service;
+    private $startAt;
 
-
-
-        public $__REQUEST  = [];
-        public $__RESPONSE = [];
+    private $errorTriggered = [];
 
 
         /**
-         * @throws DomainNameAPIException
+     * DomainNameAPI_PHPLibrary constructor.
+     * @param string $userName
+     * @param string $password
+     * @param bool $testMode
+     * @throws \Exception | \SoapFault
          */
-        public function __construct($UserName = "ownername", $Password = "ownerpass", $TestMode = false) {
-
-            self::setCredentials($UserName,$Password);
-            self::useTestMode($TestMode);
+    public function __construct($userName = "ownername", $password = "ownerpass", $testMode = false)
+    {
+        $this->startAt = microtime(true);
+        self::setCredentials($userName, $password);
+        self::useTestMode($testMode);
 
             try {
                 // Create unique connection
-                $this->service = new \SoapClient($this->_URL_SERVICE . "?singlewsdl", [
+            $this->service = new \SoapClient($this->serviceUrl . "?singlewsdl", [
                     "encoding"           => "UTF-8",
                     'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
                     'exceptions'         => true,
@@ -73,21 +77,22 @@ namespace DomainNameApi;
      */
         private function useTestMode($value = true) {
             if ($value === true || $value=='on') {
-                $this->_USERDATA_USERNAME = 'test1.dna@apiname.com';
-                $this->_USERDATA_PASSWORD = 'FsUvpJMzQ69scpqE';
+            $this->serviceUsername = 'test1.dna@apiname.com';
+            $this->servicePassword = 'FsUvpJMzQ69scpqE';
             }
         }
 
 
     /**
      * SET Username and Password
-     * @param $UserName
-     * @param $Password
+     * @param $userName
+     * @param $password
      * @return void
      */
-        private function setCredentials($UserName, $Password) {
-            $this->_USERDATA_USERNAME = $UserName;
-            $this->_USERDATA_PASSWORD = $Password;
+    private function setCredentials($userName, $password)
+    {
+        $this->serviceUsername = $userName;
+        $this->servicePassword = $password;
         }
 
 
@@ -96,7 +101,7 @@ namespace DomainNameApi;
      * @return array|mixed
      */
         public function getRequestData(){
-            return $this->__REQUEST;
+        return $this->lastRequest;
         }
 
     /**
@@ -104,7 +109,7 @@ namespace DomainNameApi;
      * @return array|mixed
      */
         public function setRequestData($request){
-            $this->__REQUEST = $request;
+        $this->lastRequest = $request;
         }
 
     /**
@@ -112,7 +117,7 @@ namespace DomainNameApi;
      * @return array|mixed
      */
         public function getResponseData(){
-            return $this->__RESPONSE;
+        return $this->lastResponse;
         }
 
     /**
@@ -120,11 +125,13 @@ namespace DomainNameApi;
      * @return array|mixed
      */
         public function setResponseData($response){
-            $this->__RESPONSE = $response;
+        $this->lastResponse = $response;
         }
 
         private function sendErrorToSentryAsync(\Exception $e)
         {
+
+        $elapsed_time = microtime(true) - $this->startAt;
             $parsed_dsn = parse_url($this->dsn);
 
             // API URL'si
@@ -133,6 +140,18 @@ namespace DomainNameApi;
             $public_key = $parsed_dsn['user'];
             $secret_key = $parsed_dsn['pass'] ?? null;
             $api_url    = "https://$host/api/$project_id/store/";
+
+        try {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, "http://ipecho.net/plain");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+            $external_ip = curl_exec($ch);
+            curl_close($ch);
+        } catch (\Exception $e) {
+            $external_ip = 'unknown';
+        }
+
 
             // Hata verisi
             $errorData = [
@@ -173,6 +192,9 @@ namespace DomainNameApi;
                     'trace_id'        => bin2hex(random_bytes(8)), // Trace ID örneği
                     'runtime_name'    => 'PHP',
                     'runtime_version' => phpversion(),
+                'ip_address'      => $external_ip,
+                'elapsed_time'    => number_format($elapsed_time,4),
+
                 ],
                 'extra' => [
                     'request_data'  => $this->getRequestData(),
@@ -207,8 +229,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"   => $this->_USERDATA_PASSWORD,
-                    "UserName"   => $this->_USERDATA_USERNAME,
+                "Password"   => $this->servicePassword,
+                "UserName"   => $this->serviceUsername,
                     'CurrencyId' => 2 // 1: TRY, 2: USD
                 ]
             ];
@@ -259,22 +281,22 @@ namespace DomainNameApi;
         /**
          * Get Current primary Balance for your account
          */
-        public function GetCurrentBalance($CurrencyId = 2)
+    public function GetCurrentBalance($currencyId = 2)
         {
-            if (strtoupper($CurrencyId) == 'USD') {
-                $CurrencyId = 2;
-            } elseif (in_array(strtoupper($CurrencyId), ['TRY', 'TL', '1'])) {
-                $CurrencyId = 1;
+        if (strtoupper($currencyId) == 'USD') {
+            $currencyId = 2;
+        } elseif (in_array(strtoupper($currencyId), ['TRY', 'TL', '1'])) {
+            $currencyId = 1;
             } else {
-                $CurrencyId = 2;
+            $currencyId = 2;
             }
 
 
             $parameters = [
                 "request" => [
-                    "Password"   => $this->_USERDATA_PASSWORD,
-                    "UserName"   => $this->_USERDATA_USERNAME,
-                    'CurrencyId' => $CurrencyId
+                "Password"   => $this->servicePassword,
+                "UserName"   => $this->serviceUsername,
+                'CurrencyId' => $currencyId
                 ]
             ];
 
@@ -300,8 +322,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"       => $this->_USERDATA_PASSWORD,
-                    "UserName"       => $this->_USERDATA_USERNAME,
+                "Password"       => $this->servicePassword,
+                "UserName"       => $this->serviceUsername,
                     "DomainNameList" => $Domains,
                     "TldList"        => $TLDs,
                     "Period"         => $Period,
@@ -358,8 +380,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password" => $this->_USERDATA_PASSWORD,
-                    "UserName" => $this->_USERDATA_USERNAME,
+                "Password" => $this->servicePassword,
+                "UserName" => $this->serviceUsername,
                 ]
             ];
 
@@ -411,8 +433,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"                => $this->_USERDATA_PASSWORD,
-                    "UserName"                => $this->_USERDATA_USERNAME,
+                "Password"                => $this->servicePassword,
+                "UserName"                => $this->serviceUsername,
                     'IncludePriceDefinitions' => 1,
                     'PageSize'                => $count
                 ]
@@ -480,8 +502,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"   => $this->_USERDATA_PASSWORD,
-                    "UserName"   => $this->_USERDATA_USERNAME,
+                "Password"   => $this->servicePassword,
+                "UserName"   => $this->serviceUsername,
                     "DomainName" => $DomainName
                 ]
             ];
@@ -519,8 +541,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"       => $this->_USERDATA_PASSWORD,
-                    "UserName"       => $this->_USERDATA_USERNAME,
+                "Password"       => $this->servicePassword,
+                "UserName"       => $this->serviceUsername,
                     "DomainName"     => $DomainName,
                     "NameServerList" => array_values($NameServers)
                 ]
@@ -551,8 +573,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"   => $this->_USERDATA_PASSWORD,
-                    "UserName"   => $this->_USERDATA_USERNAME,
+                "Password"   => $this->servicePassword,
+                "UserName"   => $this->serviceUsername,
                     "DomainName" => $DomainName
                 ]
             ];
@@ -580,8 +602,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"   => $this->_USERDATA_PASSWORD,
-                    "UserName"   => $this->_USERDATA_USERNAME,
+                "Password"   => $this->servicePassword,
+                "UserName"   => $this->serviceUsername,
                     "DomainName" => $DomainName
                 ]
             ];
@@ -612,8 +634,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"        => $this->_USERDATA_PASSWORD,
-                    "UserName"        => $this->_USERDATA_USERNAME,
+                "Password"        => $this->servicePassword,
+                "UserName"        => $this->serviceUsername,
                     "DomainName"      => $DomainName,
                     "ChildNameServer" => $NameServer,
                     "IpAddressList"   => [$IPAdresses]
@@ -645,8 +667,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"        => $this->_USERDATA_PASSWORD,
-                    "UserName"        => $this->_USERDATA_USERNAME,
+                "Password"        => $this->servicePassword,
+                "UserName"        => $this->serviceUsername,
                     "DomainName"      => $DomainName,
                     "ChildNameServer" => $NameServer
                 ]
@@ -677,8 +699,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"        => $this->_USERDATA_PASSWORD,
-                    "UserName"        => $this->_USERDATA_USERNAME,
+                "Password"        => $this->servicePassword,
+                "UserName"        => $this->serviceUsername,
                     "DomainName"      => $DomainName,
                     "ChildNameServer" => $NameServer,
                     "IpAddressList"   => [$IPAdresses]
@@ -711,8 +733,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"   => $this->_USERDATA_PASSWORD,
-                    "UserName"   => $this->_USERDATA_USERNAME,
+                "Password"   => $this->servicePassword,
+                "UserName"   => $this->serviceUsername,
                     "DomainName" => $DomainName
                 ]
             ];
@@ -765,8 +787,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"              => $this->_USERDATA_PASSWORD,
-                    "UserName"              => $this->_USERDATA_USERNAME,
+                "Password"              => $this->servicePassword,
+                "UserName"              => $this->serviceUsername,
                     "DomainName"            => $DomainName,
                     "AdministrativeContact" => $Contacts["Administrative"],
                     "BillingContact"        => $Contacts["Billing"],
@@ -816,8 +838,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"             => $this->_USERDATA_PASSWORD,
-                    "UserName"             => $this->_USERDATA_USERNAME,
+                "Password"             => $this->servicePassword,
+                "UserName"             => $this->serviceUsername,
                     "DomainName"           => $DomainName,
                     "AuthCode"             => $AuthCode,
                     'AdditionalAttributes' => [
@@ -868,8 +890,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"   => $this->_USERDATA_PASSWORD,
-                    "UserName"   => $this->_USERDATA_USERNAME,
+                "Password"   => $this->servicePassword,
+                "UserName"   => $this->serviceUsername,
                     "DomainName" => $DomainName
                 ]
             ];
@@ -899,8 +921,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"   => $this->_USERDATA_PASSWORD,
-                    "UserName"   => $this->_USERDATA_USERNAME,
+                "Password"   => $this->servicePassword,
+                "UserName"   => $this->serviceUsername,
                     "DomainName" => $DomainName
                 ]
             ];
@@ -930,8 +952,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"   => $this->_USERDATA_PASSWORD,
-                    "UserName"   => $this->_USERDATA_USERNAME,
+                "Password"   => $this->servicePassword,
+                "UserName"   => $this->serviceUsername,
                     "DomainName" => $DomainName
                 ]
             ];
@@ -962,8 +984,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"   => $this->_USERDATA_PASSWORD,
-                    "UserName"   => $this->_USERDATA_USERNAME,
+                "Password"   => $this->servicePassword,
+                "UserName"   => $this->serviceUsername,
                     "DomainName" => $DomainName,
                     "Period"     => $Period
                 ]
@@ -972,11 +994,11 @@ namespace DomainNameApi;
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
                 $data = $response[key($response)];
 
-                if ($data['OperationResult'] == 'SUCCESS') {
+            if (isset($data["ExpirationDate"])) {
                     return [
                         'result' => 'OK',
                         'data'   => [
-                            'ExpirationDate' => $data["ExpirationDate"] ?? null
+                        'ExpirationDate' => $data["ExpirationDate"]
                         ]
                     ];
                 } else {
@@ -1017,8 +1039,8 @@ namespace DomainNameApi;
         ) {
             $parameters = [
                 "request" => [
-                    "Password"                => $this->_USERDATA_PASSWORD,
-                    "UserName"                => $this->_USERDATA_USERNAME,
+                "Password"                => $this->servicePassword,
+                "UserName"                => $this->serviceUsername,
                     "DomainName"              => $DomainName,
                     "Period"                  => $Period,
                     "NameServerList"          => $NameServers,
@@ -1085,8 +1107,8 @@ namespace DomainNameApi;
 
             $parameters = [
                 "request" => [
-                    "Password"       => $this->_USERDATA_PASSWORD,
-                    "UserName"       => $this->_USERDATA_USERNAME,
+                "Password"       => $this->servicePassword,
+                "UserName"       => $this->serviceUsername,
                     "DomainName"     => $DomainName,
                     "ProtectPrivacy" => $Status,
                     "Reason"         => $Reason
@@ -1116,8 +1138,8 @@ namespace DomainNameApi;
         {
             $parameters = [
                 "request" => [
-                    "Password"   => $this->_USERDATA_PASSWORD,
-                    "UserName"   => $this->_USERDATA_USERNAME,
+                "Password"   => $this->servicePassword,
+                "UserName"   => $this->serviceUsername,
                     "DomainName" => $DomainName
                 ]
             ];
@@ -1160,7 +1182,8 @@ namespace DomainNameApi;
         }
 
         // Get error if exists
-        private function parseError($response) {
+    private function parseError($response,$trace=true)
+    {
             $result = false;
 
             if (is_null($response)) {
@@ -1225,6 +1248,7 @@ namespace DomainNameApi;
 
                 if (isset($response[key($response)]["OperationMessage"])) {
                     $result["Code"] = "API_" . $response[key($response)]["ErrorCode"];
+                $result['Response'] = print_r($response, true);
                 }
 
                 if (isset($response[key($response)]["OperationResult"])) {
@@ -1237,14 +1261,16 @@ namespace DomainNameApi;
 
             }
 
+        if (isset($result["Code"]) && $trace===true) {
             $this->sendErrorToSentryAsync(new \Exception("API_ERROR: " .$result["Code"] . " - " . $result["Message"] . " - " . $result["Details"]));
+        }
 
             return $result;
         }
 
         // Check if response contains error
         private function hasError($response) {
-            return ($this->parseError($response) === false) ? false : true;
+        return ($this->parseError($response,false) === false) ? false : true;
         }
 
         // Set error message
@@ -1682,7 +1708,9 @@ namespace DomainNameApi;
             try {
 
                 // SOAP method which is same as current function name called
-                $_response = $this->service->__soapCall($fn, [$parameters]);
+            $_response_raw = $_response = $this->service->__soapCall($fn, [$parameters]);
+
+            $_response_raw = $this->service->__getLastResponse();
 
 
                 // Serialize as array
@@ -1702,8 +1730,6 @@ namespace DomainNameApi;
                     $result["result"] = "ERROR";
                     $result["error"]  = $this->parseError($_response);
                 }
-                $xml = new \SimpleXMLElement($this->__RESPONSE);
-
             } catch (\SoapFault $ex) {
                 $result["result"] = "ERROR";
                 $result["error"]  = $this->setError('INVALID_RESPONSE','Invalid Response occured',$ex->getMessage());
