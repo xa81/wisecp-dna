@@ -10,7 +10,7 @@
 /**
  * Class DomainNameAPI_PHPLibrary
  * @package DomainNameApi
- * @version 2.0.12
+ * @version 2.0.13
  */
 
 /*
@@ -21,35 +21,49 @@ namespace DomainNameApi;
 
     class DomainNameAPI_PHPLibrary {
 
+        const VERSION = '2.0.13';
+        private $dsn = 'https://d4e2d61e4af2d4c68fb21ab93bf51ff2@o4507492369039360.ingest.de.sentry.io/4507492373954640';
+
         private $_USERDATA_USERNAME = "ownername";
         private $_USERDATA_PASSWORD = "ownerpass";
         private $_URL_SERVICE       = "https://whmcs.domainnameapi.com/DomainApi.svc";
         private $service;
 
 
+
         public $__REQUEST  = [];
         public $__RESPONSE = [];
 
 
+        /**
+         * @throws DomainNameAPIException
+         */
         public function __construct($UserName = "ownername", $Password = "ownerpass", $TestMode = false) {
 
             self::setCredentials($UserName,$Password);
             self::useTestMode($TestMode);
 
-            // Create unique connection
-            $this->service = new \SoapClient($this->_URL_SERVICE . "?singlewsdl", [
-                // 'trace'              => true,
-                "encoding"           => "UTF-8",
-                'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
-                // 'debug'              => true,
-                'exceptions'         => true,
-                'connection_timeout' => 20,
-            ]);
+            try {
+                // Create unique connection
+                $this->service = new \SoapClient($this->_URL_SERVICE . "?singlewsdl", [
+                    "encoding"           => "UTF-8",
+                    'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
+                    'exceptions'         => true,
+                    'connection_timeout' => 20,
+                ]);
+
+            }catch(\SoapFault $e){
+                $this->sendErrorToSentryAsync($e);
+                throw new \Exception("SOAP Connection Error: ".$e->getMessage());
+            }catch (\Exception $e){
+                $this->sendErrorToSentryAsync($e);
+                throw new \Exception("SOAP Error: ".$e->getMessage());
+            }
 
         }
 
 
-        // METHODS
+
 
 
     /**
@@ -109,40 +123,115 @@ namespace DomainNameApi;
             $this->__RESPONSE = $response;
         }
 
+        private function sendErrorToSentryAsync(\Exception $e)
+        {
+            $parsed_dsn = parse_url($this->dsn);
+
+            // API URL'si
+            $host       = $parsed_dsn['host'];
+            $project_id = ltrim($parsed_dsn['path'], '/');
+            $public_key = $parsed_dsn['user'];
+            $secret_key = $parsed_dsn['pass'] ?? null;
+            $api_url    = "https://$host/api/$project_id/store/";
+
+            // Hata verisi
+            $errorData = [
+                'event_id'  => bin2hex(random_bytes(16)),
+                'timestamp' => gmdate('Y-m-d\TH:i:s\Z'),
+                'level'     => 'error',
+                'logger'    => 'php',
+                'platform'  => 'php',
+                'culprit'   => __FILE__,
+                'message'   => [
+                    'formatted' => $e->getMessage()
+                ],
+                'exception' => [
+                    'values' => [
+                        [
+                            'type'       => self::class,
+                            'value'      => $e->getMessage(),
+                            'stacktrace' => [
+                                'frames' => [
+                                    [
+                                        'filename' => $e->getFile(),
+                                        'lineno'   => $e->getLine(),
+                                        'function' => $e->getTraceAsString(),
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                'tags'      => [
+                    'handled'         => 'yes',
+                    'level'           => 'error',
+                    'release'         => self::VERSION,
+                    'environment'     => 'production',
+                    'url'             => $_SERVER['REQUEST_URI'] ?? 'unknown',
+                    'transaction'     => $_SERVER['REQUEST_METHOD'] ?? 'unknown',
+                    'status_code'     => http_response_code(),
+                    'trace_id'        => bin2hex(random_bytes(8)), // Trace ID örneği
+                    'runtime_name'    => 'PHP',
+                    'runtime_version' => phpversion(),
+                ],
+                'extra' => [
+                    'request_data'  => $this->getRequestData(),
+                    'response_data' => $this->getResponseData(),
+                ]
+            ];
+
+            // Sentry başlığı
+            $sentry_auth = [
+                'sentry_version=7',
+                'sentry_client=dnalib-php/' . self::VERSION,
+                "sentry_key=$public_key"
+            ];
+            if ($secret_key) {
+                $sentry_auth[] = "sentry_secret=$secret_key";
+            }
+            $sentry_auth_header = 'X-Sentry-Auth: Sentry ' . implode(', ', $sentry_auth);
+
+            $cmd = 'curl -X POST ' . escapeshellarg($api_url) .
+               ' -H ' . escapeshellarg('Content-Type: application/json') .
+               ' -H ' . escapeshellarg($sentry_auth_header) .
+               ' -d ' . escapeshellarg(json_encode($errorData)) .
+               ' > /dev/null 2>&1 &';
+            exec($cmd);
+        }
+
 
         /**
-     * Get Current account details with balance
+         * Get Current account details with balance
          */
-        public function GetResellerDetails() {
+        public function GetResellerDetails()
+        {
             $parameters = [
                 "request" => [
-                    "Password"       => $this->_USERDATA_PASSWORD,
-                    "UserName"       => $this->_USERDATA_USERNAME,
-                'CurrencyId'=>2 // 1: TRY, 2: USD
+                    "Password"   => $this->_USERDATA_PASSWORD,
+                    "UserName"   => $this->_USERDATA_USERNAME,
+                    'CurrencyId' => 2 // 1: TRY, 2: USD
                 ]
             ];
 
 
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) {
-
                 $data = $response[key($response)];
                 $resp = [];
 
                 if (isset($data['ResellerInfo'])) {
                     $resp['result'] = 'OK';
-                    $resp['id']       = $data['ResellerInfo']['Id'];
-                    $resp['active']   = $data['ResellerInfo']['Status'] == 'Active';
-                    $resp['name']     = $data['ResellerInfo']['Name'];
+                    $resp['id']     = $data['ResellerInfo']['Id'];
+                    $resp['active'] = $data['ResellerInfo']['Status'] == 'Active';
+                    $resp['name']   = $data['ResellerInfo']['Name'];
 
                     $active_currency = $data['ResellerInfo']['BalanceInfoList']['BalanceInfo'][0];
-                    $balances = [];
+                    $balances        = [];
                     foreach ($data['ResellerInfo']['BalanceInfoList']['BalanceInfo'] as $k => $v) {
-
                         if ($v['CurrencyName'] == $data['ResellerInfo']['CurrencyInfo']['Code']) {
                             $active_currency = $v;
                         }
 
-                        $balances[]= [
+                        $balances[] = [
                             'balance'  => $v['Balance'],
                             'currency' => $v['CurrencyName'],
                             'symbol'   => $v['CurrencySymbol'],
@@ -153,19 +242,14 @@ namespace DomainNameApi;
                     $resp['currency'] = $active_currency['CurrencyName'];
                     $resp['symbol']   = $active_currency['CurrencySymbol'];
                     $resp['balances'] = $balances;
-
                 } else {
                     $resp['result'] = 'ERROR';
-                    $resp['error'] = $this->setError("INVALID_CREDINENTIALS", "Invalid response received from server!", "invalid username and password");
-
+                    $resp['error']  = $this->setError("INVALID_CREDINENTIALS", "Invalid response received from server!", "invalid username and password");
                 }
 
 
-
                 return $resp;
-
             });
-
 
 
             return $response;
@@ -173,52 +257,47 @@ namespace DomainNameApi;
 
 
         /**
-     * Get Current primary Balance for your account
+         * Get Current primary Balance for your account
          */
-    public function GetCurrentBalance($CurrencyId = 2) {
-
-        if(strtoupper($CurrencyId) == 'USD'){
-            $CurrencyId = 2;
-        }elseif (in_array(strtoupper($CurrencyId), ['TRY','TL','1'])) {
-            $CurrencyId = 1;
-        }else{
-            $CurrencyId = 2;
-        }
+        public function GetCurrentBalance($CurrencyId = 2)
+        {
+            if (strtoupper($CurrencyId) == 'USD') {
+                $CurrencyId = 2;
+            } elseif (in_array(strtoupper($CurrencyId), ['TRY', 'TL', '1'])) {
+                $CurrencyId = 1;
+            } else {
+                $CurrencyId = 2;
+            }
 
 
             $parameters = [
                 "request" => [
-                    "Password"       => $this->_USERDATA_PASSWORD,
-                    "UserName"       => $this->_USERDATA_USERNAME,
-                'CurrencyId' => $CurrencyId
+                    "Password"   => $this->_USERDATA_PASSWORD,
+                    "UserName"   => $this->_USERDATA_USERNAME,
+                    'CurrencyId' => $CurrencyId
                 ]
             ];
 
 
-
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) {
-
                 return $response['GetCurrentBalanceResult'];
-
             });
-
-
 
 
             return $response;
         }
 
 
-
         /**
-     * Check Availability , SLD and TLD must be in array
-     * @param array $Domains
-     * @param array $TLDs
-     * @param int $Period
-     * @param string $Command
-     * @return array
+         * Check Availability , SLD and TLD must be in array
+         * @param array $Domains
+         * @param array $TLDs
+         * @param int $Period
+         * @param string $Command
+         * @return array
          */
-        public function CheckAvailability($Domains, $TLDs, $Period, $Command) {
+        public function CheckAvailability($Domains, $TLDs, $Period, $Command)
+        {
             $parameters = [
                 "request" => [
                     "Password"       => $this->_USERDATA_PASSWORD,
@@ -232,41 +311,37 @@ namespace DomainNameApi;
 
 
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) {
-
-
-
                 //return $response;
-                $data = $response[key($response)];
-                $available=[];
+                $data      = $response[key($response)];
+                $available = [];
 
-                if(isset($data["DomainAvailabilityInfoList"]['DomainAvailabilityInfo']['Tld'])){
+                if (isset($data["DomainAvailabilityInfoList"]['DomainAvailabilityInfo']['Tld'])) {
                     $buffer = $data["DomainAvailabilityInfoList"]['DomainAvailabilityInfo'];
-                    $data=[
-                        'DomainAvailabilityInfoList'=>['DomainAvailabilityInfo'=>[
-                            $buffer
-                        ]]
+                    $data   = [
+                        'DomainAvailabilityInfoList' => [
+                            'DomainAvailabilityInfo' => [
+                                $buffer
+                            ]
+                        ]
                     ];
                 }
 
                 foreach ($data["DomainAvailabilityInfoList"]['DomainAvailabilityInfo'] as $name => $value) {
-
                     $available[] = [
-                        "TLD"     => $value["Tld"],
-                    "DomainName" => $value["DomainName"],
-                        "Status"  => $value["Status"],
-                    "Command"    => $value["Command"],
-                        "Period"  => $value["Period"],
-                        "IsFee"   => $value["IsFee"],
-                        "Price"   => $value["Price"],
-                    "Currency"   => $value["Currency"],
-                    "Reason"     => $value["Reason"],
+                        "TLD"        => $value["Tld"],
+                        "DomainName" => $value["DomainName"],
+                        "Status"     => $value["Status"],
+                        "Command"    => $value["Command"],
+                        "Period"     => $value["Period"],
+                        "IsFee"      => $value["IsFee"],
+                        "Price"      => $value["Price"],
+                        "Currency"   => $value["Currency"],
+                        "Reason"     => $value["Reason"],
                     ];
-
                 }
 
                 return $available;
             });
-
 
 
             // Log last request and response
@@ -276,11 +351,11 @@ namespace DomainNameApi;
 
 
         /**
-     * Get Domain List 0f your account
-     * @return array
+         * Get Domain List 0f your account
+         * @return array
          */
-    public function GetList($extra_parameters=[]) {
-
+        public function GetList($extra_parameters = [])
+        {
             $parameters = [
                 "request" => [
                     "Password" => $this->_USERDATA_PASSWORD,
@@ -288,14 +363,11 @@ namespace DomainNameApi;
                 ]
             ];
 
-        foreach ($extra_parameters as $k => $v) {
-            $parameters['request'][$k] = $v;
-        }
+            foreach ($extra_parameters as $k => $v) {
+                $parameters['request'][$k] = $v;
+            }
 
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) {
-
-
-
                 $data = $response[key($response)];
 
                 if (isset($data["TotalCount"]) && is_numeric($data["TotalCount"])) {
@@ -310,22 +382,19 @@ namespace DomainNameApi;
                                 $result["data"]["Domains"][] = $this->parseDomainInfo($domainInfo);
                             }
                         }
-
                     }
 
-                    $result["result"] = "OK";
-                $result["TotalCount"] = $data["TotalCount"];
-
+                    $result["result"]     = "OK";
+                    $result["TotalCount"] = $data["TotalCount"];
                 } else {
                     // Set error
                     $result["result"] = "ERROR";
                     $result["error"]  = $this->setError("INVALID_DOMAIN_LIST", "Invalid response received from server!", "Domain info is not a valid array or more than one domain info has returned!");
+
+                    $this->sendErrorToSentryAsync(new \Exception("INVALID_DOMAIN_LIST: Invalid response received from server! Domain info is not a valid array or more than one domain info has returned!"));
                 }
                 return $result;
             });
-
-
-
 
 
             // Log last request and response
@@ -335,27 +404,24 @@ namespace DomainNameApi;
 
 
         /**
-     * Return tld list and pricing matrix , required for price and tld sync
+         * Return tld list and pricing matrix , required for price and tld sync
          * @param int $count
          */
-        public function GetTldList($count=20) {
+        public function GetTldList($count = 20)
+        {
             $parameters = [
                 "request" => [
-                    "Password" => $this->_USERDATA_PASSWORD,
-                    "UserName" => $this->_USERDATA_USERNAME,
-                    'IncludePriceDefinitions'=>1,
-                    'PageSize'=>$count
+                    "Password"                => $this->_USERDATA_PASSWORD,
+                    "UserName"                => $this->_USERDATA_USERNAME,
+                    'IncludePriceDefinitions' => 1,
+                    'PageSize'                => $count
                 ]
             ];
 
 
-
-            $result = self::parseCall(__FUNCTION__,$parameters, function ($response) {
-
-
-
-                $data = $response[key($response)];
-                $result =[];
+            $result = self::parseCall(__FUNCTION__, $parameters, function ($response) {
+                $data   = $response[key($response)];
+                $result = [];
 
                 // If DomainInfo a valid array
                 if (isset($data["TldInfoList"]) && is_array($data["TldInfoList"])) {
@@ -364,38 +430,37 @@ namespace DomainNameApi;
                     $tlds = [];
 
                     foreach ($data["TldInfoList"]['TldInfo'] as $k => $v) {
-
-                    $pricing = $currencies =[];
+                        $pricing = $currencies = [];
                         foreach ($v['PriceInfoList']['TldPriceInfo'] as $kp => $vp) {
-                            $pricing[strtolower($vp['TradeType'])][$vp['Period']]=$vp['Price'];
-                        $currencies[strtolower($vp['TradeType'])]=$vp['CurrencyName'];
+                            $pricing[strtolower($vp['TradeType'])][$vp['Period']] = $vp['Price'];
+                            $currencies[strtolower($vp['TradeType'])]             = $vp['CurrencyName'];
                         }
 
                         $tlds[] = [
-                            'id'        => $v['Id'],
-                            'status'    => $v['Status'],
-                            'maxchar'   => $v['MaxCharacterCount'],
-                            'maxperiod' => $v['MaxRegistrationPeriod'],
-                            'minchar'   => $v['MinCharacterCount'],
-                            'minperiod' => $v['MinRegistrationPeriod'],
-                            'tld'       => $v['Name'],
-                        'pricing'=>$pricing,
-                        'currencies'=>$currencies,
+                            'id'         => $v['Id'],
+                            'status'     => $v['Status'],
+                            'maxchar'    => $v['MaxCharacterCount'],
+                            'maxperiod'  => $v['MaxRegistrationPeriod'],
+                            'minchar'    => $v['MinCharacterCount'],
+                            'minperiod'  => $v['MinRegistrationPeriod'],
+                            'tld'        => $v['Name'],
+                            'pricing'    => $pricing,
+                            'currencies' => $currencies,
                         ];
-
                     }
 
-                    $result=[
-                        'data'=>$tlds,
-                        'result'=>'OK'
+                    $result = [
+                        'data'   => $tlds,
+                        'result' => 'OK'
                     ];
-
                 } else {
                     // Set error
-                    $result=[
-                        'result'=>'ERROR',
-                        'error'=>$this->setError("INVALID_TLD_LIST", "Invalid response received from server!", "Domain info is not a valid array or more than one domain info has returned!")
+                    $result = [
+                        'result' => 'ERROR',
+                        'error'  => $this->setError("INVALID_TLD_LIST", "Invalid response received from server!",
+                            "Domain info is not a valid array or more than one domain info has returned!")
                     ];
+                    $this->sendErrorToSentryAsync(new \Exception("INVALID_TLD_LIST: Invalid response received from server! Domain info is not a valid array or more than one domain info has returned!"));
                 }
 
                 return $result;
@@ -406,15 +471,13 @@ namespace DomainNameApi;
         }
 
 
-
         /**
-     * Get Domain details
-     * @param string $DomainName
-     * @return array
+         * Get Domain details
+         * @param string $DomainName
+         * @return array
          */
-        public function GetDetails($DomainName) {
-
-
+        public function GetDetails($DomainName)
+        {
             $parameters = [
                 "request" => [
                     "Password"   => $this->_USERDATA_PASSWORD,
@@ -424,9 +487,7 @@ namespace DomainNameApi;
             ];
 
 
-
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) {
-
                 $data = $response[key($response)];
 
                 // If DomainInfo a valid array
@@ -434,44 +495,39 @@ namespace DomainNameApi;
                     // Parse domain info
                     $result["data"]   = $this->parseDomainInfo($data["DomainInfo"]);
                     $result["result"] = "OK";
-
                 } else {
                     // Set error
                     $result["result"] = "ERROR";
                     $result["error"]  = $this->setError("INVALID_DOMAIN_LIST", "Invalid response received from server!", "Domain info is not a valid array or more than one domain info has returned!");
+
+                    $this->sendErrorToSentryAsync(new \Exception("INVALID_DOMAIN_LIST: Invalid response received from server! Domain info is not a valid array or more than one domain info has returned!"));
                 }
                 return $result;
             });
-
-
-
 
 
             return $response;
         }
 
         /**
-     * Modify Name Server, Nameservers must be valid array
-     * @param string $DomainName
-     * @param array $NameServers
-     * @return array
+         * Modify Name Server, Nameservers must be valid array
+         * @param string $DomainName
+         * @param array $NameServers
+         * @return array
          */
-        public function ModifyNameServer($DomainName, $NameServers) {
+        public function ModifyNameServer($DomainName, $NameServers)
+        {
             $parameters = [
                 "request" => [
                     "Password"       => $this->_USERDATA_PASSWORD,
                     "UserName"       => $this->_USERDATA_USERNAME,
                     "DomainName"     => $DomainName,
-                "NameServerList" => array_values($NameServers)
+                    "NameServerList" => array_values($NameServers)
                 ]
             ];
 
 
-
-
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
-
-
                 $data = $response[key($response)];
 
                 $result["data"]                = [];
@@ -487,11 +543,12 @@ namespace DomainNameApi;
 
 
         /**
-     * Enable Theft Protection Lock for domain
-     * @param string $DomainName
-     * @return array
+         * Enable Theft Protection Lock for domain
+         * @param string $DomainName
+         * @return array
          */
-        public function EnableTheftProtectionLock($DomainName) {
+        public function EnableTheftProtectionLock($DomainName)
+        {
             $parameters = [
                 "request" => [
                     "Password"   => $this->_USERDATA_PASSWORD,
@@ -500,19 +557,14 @@ namespace DomainNameApi;
                 ]
             ];
 
-            $response = self::parseCall(__FUNCTION__, $parameters, function ($response)  {
-
-
+            $response = self::parseCall(__FUNCTION__, $parameters, function ($response) {
                 return [
                     'data'   => [
                         'LockStatus' => true
                     ],
                     'result' => 'OK'
                 ];
-
             });
-
-
 
 
             return $response;
@@ -520,11 +572,12 @@ namespace DomainNameApi;
 
 
         /**
-     * Disable Theft Protection Lock for domain
-     * @param string $DomainName
-     * @return array
+         * Disable Theft Protection Lock for domain
+         * @param string $DomainName
+         * @return array
          */
-        public function DisableTheftProtectionLock($DomainName) {
+        public function DisableTheftProtectionLock($DomainName)
+        {
             $parameters = [
                 "request" => [
                     "Password"   => $this->_USERDATA_PASSWORD,
@@ -534,9 +587,7 @@ namespace DomainNameApi;
             ];
 
 
-            $response = self::parseCall(__FUNCTION__, $parameters, function ($response)  {
-
-
+            $response = self::parseCall(__FUNCTION__, $parameters, function ($response) {
                 return [
                     'data'   => [
                         'LockStatus' => false
@@ -549,16 +600,16 @@ namespace DomainNameApi;
             return $response;
         }
 
-    // CHILD NAMESERVER MANAGEMENT
 
         /**
-     * Add Child Name Server for domain
-     * @param string $DomainName
-     * @param string $NameServer
-     * @param string $IPAdresses
-     * @return array
+         * Add Child Name Server for domain
+         * @param string $DomainName
+         * @param string $NameServer
+         * @param string $IPAdresses
+         * @return array
          */
-        public function AddChildNameServer($DomainName, $NameServer, $IPAdresses) {
+        public function AddChildNameServer($DomainName, $NameServer, $IPAdresses)
+        {
             $parameters = [
                 "request" => [
                     "Password"        => $this->_USERDATA_PASSWORD,
@@ -570,8 +621,7 @@ namespace DomainNameApi;
             ];
 
 
-            $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use($parameters)  {
-
+            $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
                 return [
                     'data'   => [
                         'NameServer' => $parameters["request"]["ChildNameServer"],
@@ -586,12 +636,13 @@ namespace DomainNameApi;
 
 
         /**
-     * Delete Child Name Server for domain
-     * @param string $DomainName
-     * @param string $NameServer
-     * @return array
+         * Delete Child Name Server for domain
+         * @param string $DomainName
+         * @param string $NameServer
+         * @return array
          */
-        public function DeleteChildNameServer($DomainName, $NameServer) {
+        public function DeleteChildNameServer($DomainName, $NameServer)
+        {
             $parameters = [
                 "request" => [
                     "Password"        => $this->_USERDATA_PASSWORD,
@@ -602,9 +653,7 @@ namespace DomainNameApi;
             ];
 
 
-            $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use($parameters)  {
-
-
+            $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
                 return [
                     'data'   => [
                         'NameServer' => $parameters["request"]["ChildNameServer"],
@@ -614,19 +663,18 @@ namespace DomainNameApi;
             });
 
             return $response;
-
         }
 
 
         /**
-     * Modify IP of Child Name Server for domain
-     * @param string $DomainName
-     * @param string $NameServer
-     * @param string $IPAdresses
-     * @return array
+         * Modify IP of Child Name Server for domain
+         * @param string $DomainName
+         * @param string $NameServer
+         * @param string $IPAdresses
+         * @return array
          */
-        public function ModifyChildNameServer($DomainName, $NameServer, $IPAdresses) {
-
+        public function ModifyChildNameServer($DomainName, $NameServer, $IPAdresses)
+        {
             $parameters = [
                 "request" => [
                     "Password"        => $this->_USERDATA_PASSWORD,
@@ -638,9 +686,7 @@ namespace DomainNameApi;
             ];
 
 
-            $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use($parameters)  {
-
-
+            $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
                 return [
                     'data'   => [
                         'NameServer' => $parameters["request"]["ChildNameServer"],
@@ -651,18 +697,18 @@ namespace DomainNameApi;
             });
 
 
-
             return $response;
         }
 
     // CONTACT MANAGEMENT
 
         /**
-     * Get Contacts for domain, Administrative, Billing, Technical, Registrant segments will be returned
-     * @param string $DomainName
-     * @return array
+         * Get Contacts for domain, Administrative, Billing, Technical, Registrant segments will be returned
+         * @param string $DomainName
+         * @return array
          */
-        public function GetContacts($DomainName) {
+        public function GetContacts($DomainName)
+        {
             $parameters = [
                 "request" => [
                     "Password"   => $this->_USERDATA_PASSWORD,
@@ -672,10 +718,7 @@ namespace DomainNameApi;
             ];
 
 
-
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
-
-
                 $data = $response[key($response)];
 
                 $result = [];
@@ -695,31 +738,31 @@ namespace DomainNameApi;
                         ],
                         'result' => 'OK'
                     ];
-
                 } else {
                     // Set error
                     $result = [
-                        'error'  => $this->setError("INVALID_CONTACT_INTO", "Invalid response received from server!", "Contact info is not a valid array or more than one contact info has returned!"),
+                        'error'  => $this->setError("INVALID_CONTACT_INTO", "Invalid response received from server!",
+                            "Contact info is not a valid array or more than one contact info has returned!"),
                         'result' => 'ERROR'
                     ];
+                    $this->sendErrorToSentryAsync(new \Exception("INVALID_CONTACT_INTO: Invalid response received from server! Contact info is not a valid array or more than one contact info has returned!"));
                 }
                 return $result;
             });
-
 
 
             return $response;
         }
 
 
-
         /**
-     * Save Contacts for domain, Contacts segments will be saved as Administrative, Billing, Technical, Registrant.
-     * @param string $DomainName
-     * @param array $Contacts
-     * @return array
+         * Save Contacts for domain, Contacts segments will be saved as Administrative, Billing, Technical, Registrant.
+         * @param string $DomainName
+         * @param array $Contacts
+         * @return array
          */
-        public function SaveContacts($DomainName, $Contacts) {
+        public function SaveContacts($DomainName, $Contacts)
+        {
             $parameters = [
                 "request" => [
                     "Password"              => $this->_USERDATA_PASSWORD,
@@ -734,23 +777,23 @@ namespace DomainNameApi;
 
 
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
-
-
                 $data = $response[key($response)];
 
                 $result = [];
 
-                if ($data['OperationResult']=='SUCCESS') {
-                    $result=[
-                        'result'=>'OK'
-                    ] ;
+                if ($data['OperationResult'] == 'SUCCESS') {
+                    $result = [
+                        'result' => 'OK'
+                    ];
                 } else {
                     // Set error
-                    $result=[
-                        'result'=>'ERROR',
-                        'error'=>$this->setError("INVALID_DOMAIN_LIST", "Invalid response received from server!", "Domain info is not a valid array or more than one domain info has returned!")
+                    $result = [
+                        'result' => 'ERROR',
+                        'error'  => $this->setError("INVALID_CONTACT_SAVE", "Invalid response received from server!",
+                            "Contact info is not a valid array or more than one contact info has returned!")
                     ];
 
+                    $this->sendErrorToSentryAsync(new \Exception("INVALID_CONTACT_SAVE: Invalid response received from server! Contact info is not a valid array or more than one contact info has returned!"));
                 }
                 return $result;
             });
@@ -759,17 +802,18 @@ namespace DomainNameApi;
             return $response;
         }
 
-    // DOMAIN TRANSFER (INCOMING DOMAIN)
+        // DOMAIN TRANSFER (INCOMING DOMAIN)
 
-    // Start domain transfer (Incoming domain)
+        // Start domain transfer (Incoming domain)
         /**
-     * Transfer Domain
-     * @param string $DomainName
-     * @param string $AuthCode
-     * @param int $Period
-     * @return array
+         * Transfer Domain
+         * @param string $DomainName
+         * @param string $AuthCode
+         * @param int $Period
+         * @return array
          */
-        public function Transfer($DomainName, $AuthCode,$Period) {
+        public function Transfer($DomainName, $AuthCode, $Period)
+        {
             $parameters = [
                 "request" => [
                     "Password"             => $this->_USERDATA_PASSWORD,
@@ -789,29 +833,27 @@ namespace DomainNameApi;
 
 
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
-
                 $result = [];
-                $data = $response[key($response)];
+                $data   = $response[key($response)];
                 // If DomainInfo a valid array
                 if (isset($data["DomainInfo"]) && is_array($data["DomainInfo"])) {
                     // Parse domain info
-                    $result=[
-                        'result'=>'OK',
-                        'data'=>$this->parseDomainInfo($data["DomainInfo"])
+                    $result = [
+                        'result' => 'OK',
+                        'data'   => $this->parseDomainInfo($data["DomainInfo"])
                     ];
-
                 } else {
                     // Set error
-                    $result=[
-                        'result'=>'ERROR',
-                        'data'=>$this->setError("INVALID_DOMAIN_LIST", "Invalid response received from server!", "Domain info is not a valid array or more than one domain info has returned!")
+                    $result = [
+                        'result' => 'ERROR',
+                        'data'   => $this->setError("INVALID_DOMAIN_TRANSFER_REQUEST",
+                            "Invalid response received from server!",
+                            "Domain info is not a valid array or more than one domain info has returned!")
                     ];
+                    $this->sendErrorToSentryAsync(new \Exception("INVALID_DOMAIN_TRANSFER_REQUEST: Invalid response received from server! Domain info is not a valid array or more than one domain info has returned!"));
                 }
                 return $result;
             });
-
-
-
 
 
             return $response;
@@ -819,74 +861,11 @@ namespace DomainNameApi;
 
 
         /**
-     * Stops Incoming Transfer
-     * @param string $DomainName
-     */
-    public function CancelTransfer($DomainName) {
-        $parameters = [
-            "request" => [
-                "Password"   => $this->_USERDATA_PASSWORD,
-                "UserName"   => $this->_USERDATA_USERNAME,
-                "DomainName" => $DomainName
-            ]
-        ];
-
-
-        $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
-
-
-
-             $data = $response[key($response)];
-
-            return [
-                'result'=>$data['OperationResult']=='SUCCESS'?'OK':'ERROR',
-                'data'=>[
-                    'DomainName'=>$parameters["request"]["DomainName"]
-                ]
-            ];
-        });
-
-        return $response;
-    }
-
-
-    /**
-     * Approve Outgoing transfer
-     * @param $DomainName
-     * @return mixed|string[]
-     */
-    public function ApproveTransfer($DomainName) {
-        $parameters = [
-            "request" => [
-                "Password"   => $this->_USERDATA_PASSWORD,
-                "UserName"   => $this->_USERDATA_USERNAME,
-                "DomainName" => $DomainName
-            ]
-        ];
-
-
-        $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
-
-             $data = $response[key($response)];
-
-            return [
-                'result'=>$data['OperationResult']=='SUCCESS'?'OK':'ERROR',
-                'data'=>[
-                    'DomainName'=>$parameters["request"]["DomainName"]
-                ]
-            ];
-        });
-
-        return $response;
-    }
-
-
-    /**
-     * Reject Outgoing transfer
-         * @param $DomainName
-         * @return mixed|string[]
+         * Stops Incoming Transfer
+         * @param string $DomainName
          */
-    public function RejectTransfer($DomainName) {
+        public function CancelTransfer($DomainName)
+        {
             $parameters = [
                 "request" => [
                     "Password"   => $this->_USERDATA_PASSWORD,
@@ -897,14 +876,74 @@ namespace DomainNameApi;
 
 
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
-
-
                 $data = $response[key($response)];
 
                 return [
-                    'result'=>$data['OperationResult']=='SUCCESS'?'OK':'ERROR',
-                    'data'=>[
-                        'DomainName'=>$parameters["request"]["DomainName"]
+                    'result' => $data['OperationResult'] == 'SUCCESS' ? 'OK' : 'ERROR',
+                    'data'   => [
+                        'DomainName' => $parameters["request"]["DomainName"]
+                    ]
+                ];
+            });
+
+            return $response;
+        }
+
+
+        /**
+         * Approve Outgoing transfer
+         * @param $DomainName
+         * @return mixed|string[]
+         */
+        public function ApproveTransfer($DomainName)
+        {
+            $parameters = [
+                "request" => [
+                    "Password"   => $this->_USERDATA_PASSWORD,
+                    "UserName"   => $this->_USERDATA_USERNAME,
+                    "DomainName" => $DomainName
+                ]
+            ];
+
+
+            $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
+                $data = $response[key($response)];
+
+                return [
+                    'result' => $data['OperationResult'] == 'SUCCESS' ? 'OK' : 'ERROR',
+                    'data'   => [
+                        'DomainName' => $parameters["request"]["DomainName"]
+                    ]
+                ];
+            });
+
+            return $response;
+        }
+
+
+        /**
+         * Reject Outgoing transfer
+         * @param $DomainName
+         * @return mixed|string[]
+         */
+        public function RejectTransfer($DomainName)
+        {
+            $parameters = [
+                "request" => [
+                    "Password"   => $this->_USERDATA_PASSWORD,
+                    "UserName"   => $this->_USERDATA_USERNAME,
+                    "DomainName" => $DomainName
+                ]
+            ];
+
+
+            $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
+                $data = $response[key($response)];
+
+                return [
+                    'result' => $data['OperationResult'] == 'SUCCESS' ? 'OK' : 'ERROR',
+                    'data'   => [
+                        'DomainName' => $parameters["request"]["DomainName"]
                     ]
                 ];
             });
@@ -915,11 +954,12 @@ namespace DomainNameApi;
 
         /**
          * Renew domain
-     * @param string $DomainName
-     * @param int $Period
-     * @return array
+         * @param string $DomainName
+         * @param int $Period
+         * @return array
          */
-        public function Renew($DomainName, $Period) {
+        public function Renew($DomainName, $Period)
+        {
             $parameters = [
                 "request" => [
                     "Password"   => $this->_USERDATA_PASSWORD,
@@ -930,35 +970,51 @@ namespace DomainNameApi;
             ];
 
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
-
                 $data = $response[key($response)];
 
-                return [
-                    'result'=>'OK',
-                    'data'=>[
-                        'ExpirationDate'=> $data["ExpirationDate"] ?? null
-                    ]
-                ];
-
+                if ($data['OperationResult'] == 'SUCCESS') {
+                    return [
+                        'result' => 'OK',
+                        'data'   => [
+                            'ExpirationDate' => $data["ExpirationDate"] ?? null
+                        ]
+                    ];
+                } else {
+                    return [
+                        'result' => 'ERROR',
+                        'error'  => $this->setError("INVALID_DOMAIN_RENEW", "Invalid response received from server!",
+                            "Domain info is not a valid array or more than one domain info has returned!")
+                    ];
+                    $this->sendErrorToSentryAsync(new \Exception("INVALID_DOMAIN_RENEW: Invalid response received from server! Domain info is not a valid array or more than one domain info has returned!"));
+                }
             });
 
             return $response;
         }
 
 
-    // Register domain with contact information
+        // Register domain with contact information
+
         /**
          * Register domain with contact information
-     * @param string $DomainName
-     * @param int $Period
-     * @param array $Contacts
+         * @param string $DomainName
+         * @param int $Period
+         * @param array $Contacts
          * @param array $NameServers
          * @param bool $TheftProtectionLock
          * @param bool $PrivacyProtection
          * @param array $addionalAttributes
-     * @return array
+         * @return array
          */
-        public function RegisterWithContactInfo($DomainName, $Period, $Contacts, $NameServers = ["dns.domainnameapi.com", "web.domainnameapi.com"],  $TheftProtectionLock = true, $PrivacyProtection = false,$addionalAttributes=[]) {
+        public function RegisterWithContactInfo(
+            $DomainName,
+            $Period,
+            $Contacts,
+            $NameServers = ["dns.domainnameapi.com", "web.domainnameapi.com"],
+            $TheftProtectionLock = true,
+            $PrivacyProtection = false,
+            $addionalAttributes = []
+        ) {
             $parameters = [
                 "request" => [
                     "Password"                => $this->_USERDATA_PASSWORD,
@@ -975,15 +1031,17 @@ namespace DomainNameApi;
                 ]
             ];
 
-            if(count($addionalAttributes)>0){
+            if (count($addionalAttributes) > 0) {
                 foreach ($addionalAttributes as $k => $v) {
-                    $parameters['request']['AdditionalAttributes']['KeyValueOfstringstring'][]=['Key'=>$k,'Value'=>$v];
+                    $parameters['request']['AdditionalAttributes']['KeyValueOfstringstring'][] = [
+                        'Key'   => $k,
+                        'Value' => $v
+                    ];
                 }
             }
 
 
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
-
                 $result = [];
                 $data   = $response[key($response)];
 
@@ -994,36 +1052,33 @@ namespace DomainNameApi;
                         'result' => 'OK',
                         'data'   => $this->parseDomainInfo($data["DomainInfo"])
                     ];
-
-
                 } else {
                     // Set error
                     $result = [
                         'result' => 'ERROR',
-                        'error'  => $this->setError("INVALID_DOMAIN_LIST", "Invalid response received from server!", "Domain info is not a valid array or more than one domain info has returned!")
+                        'error'  => $this->setError("INVALID_DOMAIN_REGISTER", "Invalid response received from server!",
+                            "Domain info is not a valid array or more than one domain info has returned!")
                     ];
-
+                    $this->sendErrorToSentryAsync(new \Exception("INVALID_DOMAIN_REGISTER: Invalid response received from server! Domain info is not a valid array or more than one domain info has returned!"));
                 }
                 return $result;
-
             });
-
-
 
 
             return $response;
         }
 
 
-    // Modify privacy protection status of domain
+
         /**
          * Modify privacy protection status of domain
-     * @param string $DomainName
-     * @param bool $Status
-     * @param string $Reason
-     * @return array
+         * @param string $DomainName
+         * @param bool $Status
+         * @param string $Reason
+         * @return array
          */
-        public function ModifyPrivacyProtectionStatus($DomainName, $Status, $Reason = "Owner request") {
+        public function ModifyPrivacyProtectionStatus($DomainName, $Status, $Reason = "Owner request")
+        {
             if (trim($Reason) == "") {
                 $Reason = "Owner request";
             }
@@ -1039,15 +1094,13 @@ namespace DomainNameApi;
             ];
 
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
-
                 return [
-                    'data'=>[
-                        'PrivacyProtectionStatus'=>$parameters["request"]["ProtectPrivacy"]
-                    ]  ,
-                    'result'=>'OK'
+                    'data'   => [
+                        'PrivacyProtectionStatus' => $parameters["request"]["ProtectPrivacy"]
+                    ],
+                    'result' => 'OK'
                 ];
             });
-
 
 
             return $response;
@@ -1055,11 +1108,12 @@ namespace DomainNameApi;
 
 
         /**
-     * Sync from registry, domain information will be updated from registry
-     * @param string $DomainName
-     * @return array
+         * Sync from registry, domain information will be updated from registry
+         * @param string $DomainName
+         * @return array
          */
-        public function SyncFromRegistry($DomainName) {
+        public function SyncFromRegistry($DomainName)
+        {
             $parameters = [
                 "request" => [
                     "Password"   => $this->_USERDATA_PASSWORD,
@@ -1069,7 +1123,6 @@ namespace DomainNameApi;
             ];
 
             $response = self::parseCall(__FUNCTION__, $parameters, function ($response) use ($parameters) {
-
                 $result = [];
                 $data   = $response[key($response)];
 
@@ -1080,18 +1133,17 @@ namespace DomainNameApi;
                         'data'   => $this->parseDomainInfo($data["DomainInfo"]),
                         'result' => 'OK'
                     ];
-
                 } else {
                     // Set error
                     $result = [
-                        'error'  => $this->setError("INVALID_DOMAIN_LIST", "Invalid response received from server!", "Domain info is not a valid array or more than one domain info has returned!"),
+                        'error'  => $this->setError("INVALID_DOMAIN_SYNC", "Invalid response received from server!",
+                            "Domain info is not a valid array or more than one domain info has returned!"),
                         'result' => 'ERROR'
                     ];
+                    $this->sendErrorToSentryAsync(new \Exception("INVALID_DOMAIN_SYNC: Invalid response received from server! Domain info is not a valid array or more than one domain info has returned!"));
                 }
 
                 return $result;
-
-
             });
 
             return $response;
@@ -1184,6 +1236,8 @@ namespace DomainNameApi;
                 }
 
             }
+
+            $this->sendErrorToSentryAsync(new \Exception("API_ERROR: " .$result["Code"] . " - " . $result["Message"] . " - " . $result["Details"]));
 
             return $result;
         }
@@ -1644,18 +1698,22 @@ namespace DomainNameApi;
                     $result = $_callback($_response);
 
                 } else {
-                    // Hata mesajini dondur
+                    // Hata mesajini dondura
                     $result["result"] = "ERROR";
                     $result["error"]  = $this->parseError($_response);
                 }
+                $xml = new \SimpleXMLElement($this->__RESPONSE);
 
             } catch (\SoapFault $ex) {
                 $result["result"] = "ERROR";
                 $result["error"]  = $this->setError('INVALID_RESPONSE','Invalid Response occured',$ex->getMessage());
+                $this->sendErrorToSentryAsync($ex);
             } catch (\Exception $ex) {
                 $result["result"] = "ERROR";
                 $result["error"]  = $this->parseError($this->objectToArray($ex));
+                $this->sendErrorToSentryAsync($ex);
             }
+
 
 
             return $result;
