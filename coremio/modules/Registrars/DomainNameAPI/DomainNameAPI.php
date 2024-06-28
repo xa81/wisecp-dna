@@ -569,6 +569,7 @@ class DomainNameAPI {
      */
     public function contactProcess($data = [], $type = 'Contact') {
         $this->set_credentials();
+        /*
         if (isset($data["registrant"])) {
             $whois_data = [];
             foreach ($data as $k => $v) {
@@ -618,6 +619,50 @@ class DomainNameAPI {
                 "Registrant"     => $whois_data,
             ];
         }
+        */
+
+        $formatWhoisData = function ($v) {
+            $whois_arr= [
+                "FirstName"        => $v["FirstName"],
+                "LastName"         => $v["LastName"],
+                "Company"          => $v["Company"],
+                "EMail"            => $v["EMail"],
+                "AddressLine1"     => $v["AddressLine1"],
+                "State"            => $v["State"],
+                "City"             => $v["City"],
+                "Country"          => $v["Country"],
+                "Fax"              => $v["Fax"],
+                "FaxCountryCode"   => $v["FaxCountryCode"],
+                "Phone"            => $v["Phone"],
+                "PhoneCountryCode" => $v["PhoneCountryCode"],
+                "Type"             => 'Contact',
+                "ZipCode"          => $v["ZipCode"],
+                "Status"           => '',
+            ];
+
+            if(strlen(trim($whois_arr["LastName"])) == 0){
+                $whois_arr["LastName"]= $whois_arr["FirstName"] ;
+            }
+
+            return $whois_arr;
+        };
+
+        if (isset($data["registrant"])) {
+            $whois_data = [];
+            foreach ($data as $k => $v) {
+                $whois_data[ucfirst($k)] = $formatWhoisData($v);
+            }
+            return $whois_data;
+        } else {
+            $whois_data = $formatWhoisData($data);
+            return [
+                "Administrative" => $whois_data,
+                "Billing"        => $whois_data,
+                "Technical"      => $whois_data,
+                "Registrant"     => $whois_data,
+            ];
+        }
+
 
     }
 

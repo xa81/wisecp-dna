@@ -142,16 +142,8 @@ class DomainNameAPI_PHPLibrary
         $secret_key = $parsed_dsn['pass'] ?? null;
         $api_url    = "https://$host/api/$project_id/store/";
 
-        try {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, "http://ipecho.net/plain");
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 2);
-            $external_ip = curl_exec($ch);
-            curl_close($ch);
-        } catch (\Exception $e) {
-            $external_ip = 'unknown';
-        }
+        $external_ip = $this->getServerIp();
+
 
 
         // Hata verisi
@@ -216,6 +208,48 @@ class DomainNameAPI_PHPLibrary
 
         $cmd = 'curl -X POST ' . escapeshellarg($api_url) . ' -H ' . escapeshellarg('Content-Type: application/json') . ' -H ' . escapeshellarg($sentry_auth_header) . ' -d ' . escapeshellarg(json_encode($errorData)) . ' > /dev/null 2>&1 &';
         exec($cmd);
+    }
+
+    private function getServerIp()
+    {
+        $cache_ttl    = 512; // Cache süresi 512 saniye
+        $cache_key    = 'external_ip';
+        $cache_file   = __DIR__ . '/ip_addr.cache';
+        $current_time = time();
+
+        if (function_exists('apcu_fetch')) {
+            // APCu ile cache kontrolü
+            $external_ip = apcu_fetch($cache_key);
+            if ($external_ip !== false) {
+                return $external_ip;
+            }
+        } elseif (file_exists($cache_file) && ($current_time - filemtime($cache_file) < $cache_ttl)) {
+            // Dosya ile cache kontrolü
+            return file_get_contents($cache_file);
+        }
+
+        // IP adresini alma ve cacheleme
+        try {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, "http://ipecho.net/plain");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+            $external_ip = curl_exec($ch);
+            curl_close($ch);
+
+            if ($external_ip !== false) {
+                // APCu ile cachele
+                if (function_exists('apcu_store')) {
+                    apcu_store($cache_key, $external_ip, $cache_ttl);
+                }
+                // Dosya ile cachele
+                file_put_contents($cache_file, $external_ip);
+            }
+
+            return $external_ip;
+        } catch (\Exception $e) {
+            return 'unknown';
+        }
     }
 
 
