@@ -22,11 +22,39 @@ namespace DomainNameApi;
 
 class DomainNameAPI_PHPLibrary
 {
-
+    /**
+     * Version of the library
+     */
     const VERSION = '2.0.13';
-    private $dsn             = 'https://d4e2d61e4af2d4c68fb21ab93bf51ff2@o4507492369039360.ingest.de.sentry.io/4507492373954640';
+
+    /**
+     * Error reporting enabled
+     */
+    private $errorReportingEnabled = true;
+    /**
+     * Error Reporting Will send this sentry endpoint, if errorReportingEnabled is true
+     * This request does not include sensitive informations, sensitive informations are filtered.
+     * @var string $errorReportingDsn
+     */
+    private $errorReportingDsn = 'https://d4e2d61e4af2d4c68fb21ab93bf51ff2@o4507492369039360.ingest.de.sentry.io/4507492373954640';
+
+    /**
+     * Api Username
+     *
+     * @var string $serviceUsername
+     */
     private $serviceUsername = "ownername";
+
+    /*
+     * Api Password
+     * @var string $servicePassword
+     */
     private $servicePassword = "ownerpass";
+
+    /**
+     * Api Service Soap URL
+     * @var string $serviceUrl
+     */
     private $serviceUrl      = "https://whmcs.domainnameapi.com/DomainApi.svc";
     public  $lastRequest     = [];
     public  $lastResponse    = [];
@@ -68,16 +96,15 @@ class DomainNameAPI_PHPLibrary
 
 
     /**
-     * USE TEST PLATFORM OR REAL PLATFORM
-     * if value equals false, use real platform, otherwise use test platform
+     * Deprecated
      * @param bool $value
      */
     private function useTestMode($value = true)
     {
-        if ($value === true || $value == 'on') {
-            $this->serviceUsername = 'test1.dna@apiname.com';
-            $this->servicePassword = 'FsUvpJMzQ69scpqE';
-        }
+        //if ($value === true || $value == 'on') {
+        //    $this->serviceUsername = 'test1.dna@apiname.com';
+        //    $this->servicePassword = 'FsUvpJMzQ69scpqE';
+        //}
     }
 
 
@@ -130,10 +157,19 @@ class DomainNameAPI_PHPLibrary
         $this->lastResponse = $response;
     }
 
+    /**
+     * This method sends anonymous error data to the Sentry server, if error reporting is enabled
+     *
+     * @return void
+     */
     private function sendErrorToSentryAsync(\Exception $e)
     {
+        if (!$this->errorReportingEnabled) {
+            return;
+        }
+
         $elapsed_time = microtime(true) - $this->startAt;
-        $parsed_dsn   = parse_url($this->dsn);
+        $parsed_dsn = parse_url($this->errorReportingDsn);
 
         // API URL'si
         $host       = $parsed_dsn['host'];
@@ -160,14 +196,14 @@ class DomainNameAPI_PHPLibrary
             'exception' => [
                 'values' => [
                     [
-                        'type'       => self::class,
+                        'type'       =>  str_replace(['DomainNameApi\DomainNameAPI_PHPLibrary'],['DNALib Exception'],self::class),
                         'value'      => $e->getMessage(),
                         'stacktrace' => [
                             'frames' => [
                                 [
                                     'filename' => $e->getFile(),
                                     'lineno'   => $e->getLine(),
-                                    'function' => $e->getTraceAsString(),
+                                    'function' => str_replace([dirname(__DIR__),'DomainNameApi\DomainNameAPI_PHPLibrary'],['.','Lib'],$e->getTraceAsString()),
                                 ]
                             ]
                         ]

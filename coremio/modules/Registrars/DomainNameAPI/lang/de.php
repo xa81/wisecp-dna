@@ -24,7 +24,7 @@ return [
     'tabImport'            => 'Importieren',
     'testButton'           => 'Testverbindung',
     'importNote'           => "Sie k\xc3\xb6nnen problemlos die Domain-Namen \xc3\xbcbertragen, die bereits im System des Anbieters registriert sind. Die importierten Domainnamen werden als Addon erstellt, Domainnamen, die derzeit im System registriert sind, werden gr\xc3\xbcn markiert.",
-    'importStartButton'    => 'Importieren',
+    'importStartButton'    => 'Über 750 Erweiterungen importieren',
     'saveButton'           => 'Einstellungen speichern',
     'error1'               => "API-Informationen sind nicht verf\xc3\xbcgbar",
     'error2'               => 'Domain- und Erweiterungsinformationen sind nicht vorhanden',

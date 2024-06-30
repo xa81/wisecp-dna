@@ -26,7 +26,7 @@ return [
     'tabImport'            => "Alan Adlarını İçeri Aktar",
     'testButton'           => "Bağlantıyı test et",
     'importNote'           => "Servis sağlayıcı üzerinde bulunan alan adlarını, mevcut müşterilerinize kolaylıkla aktarabilirsiniz. Bu işlemi yaptığınızda, ilgili alan adları sipariş olarak müşterilerinize tanımlanır. Sistemde zaten kayıtlı olan alan adları yeşil olarak renklendirilmiştir.",
-    'importStartButton'    => "İçeri Aktar",
+    'importStartButton'    => "750+ Uzantıyı İçeri Aktar",
     'saveButton'           => "Ayarları Kaydet",
     'error1'               => "Api bilgileri mevcut değil.",
     'error2'               => "Domain ve uzantı bilgisi gelmedi.",

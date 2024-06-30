@@ -26,7 +26,7 @@ return [
     'tabImport'            => 'Import',
     'testButton'           => 'Test Connection',
     'importNote'           => 'You can easily transfer the domain names that are already registered in provider\'s system. The imported domain names are created as an addon, domain names that are currently registered in system are marked green.',
-    'importStartButton'    => 'Import',
+    'importStartButton'    => 'Import Over 750 Extensions',
     'saveButton'           => 'Save Settings',
     'error1'               => 'API information is not available',
     'error2'               => 'Domain and extension information are not present',

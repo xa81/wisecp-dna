@@ -24,7 +24,7 @@ return [
     'tabImport'            => 'Importeren',
     'testButton'           => 'Test verbinding',
     'importNote'           => "U kunt eenvoudig de domeinnamen overdragen die al zijn geregistreerd in het systeem van de provider. De ge\xc3\xafmporteerde domeinnamen worden gemaakt als een add -on, domeinnamen die momenteel zijn geregistreerd in het systeem zijn gemarkeerd groen.",
-    'importStartButton'    => 'Importeren',
+    'importStartButton'    => 'Meer dan 750 extensies importeren',
     'saveButton'           => 'Instellingen opslaan',
     'error1'               => 'API -informatie is niet beschikbaar',
     'error2'               => 'Domein- en uitbreidingsinformatie is niet aanwezig',
