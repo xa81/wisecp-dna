@@ -20,6 +20,11 @@ class DomainNameAPI {
     private $username, $password, $tmode;
 
     function __construct($external = []) {
+
+        if (!class_exists("\DomainNameApi\DomainNameAPI_PHPLibrary")) {
+            require_once __DIR__ . DS . "api.php";
+        }
+
         $this->config = Modules::Config("Registrars", __CLASS__);
         $this->lang   = Modules::Lang("Registrars", __CLASS__);
         if (is_array($external) && sizeof($external) > 0)
@@ -29,9 +34,7 @@ class DomainNameAPI {
             return false;
         }
 
-        if (!class_exists("\DomainNameApi\DomainNameAPI_PHPLibrary")) {
-            include __DIR__ . DS . "api.php";
-        }
+
 
         if (isset($this->config["settings"]["whidden-amount"])) {
             $whidden_amount            = $this->config["settings"]["whidden-amount"];
