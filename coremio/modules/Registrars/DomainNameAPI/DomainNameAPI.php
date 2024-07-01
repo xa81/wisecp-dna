@@ -56,13 +56,14 @@ class DomainNameAPI {
     /**
      * Set credentials
      * @return bool
+     * @throws SoapFault
      */
     private function set_credentials()
     {
-        if ($this->api) {
+        if (class_exists("\DomainNameApi\DomainNameAPI_PHPLibrary")) {
             return false;
         }
-        $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($this->username, $this->password, $this->tmode);
+        $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($this->username, $this->password);
     }
 
 
@@ -78,9 +79,9 @@ class DomainNameAPI {
     private function setConfig($username, $password, $tmode) {
         $this->config["settings"]["username"]  = $username;
         $this->config["settings"]["password"]  = $password;
-        $this->config["settings"]["test-mode"] = $tmode;
+        //$this->config["settings"]["test-mode"] = $tmode;
 
-        $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($username, $password, $tmode);
+        $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($username, $password);
     }
 
     /**
