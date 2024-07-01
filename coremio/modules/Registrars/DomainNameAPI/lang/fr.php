@@ -3,7 +3,7 @@
 return [
     'name'                 => 'DomainNameAPI',
     'description'          => 'With Domainnameapi.com, one of the popular domain name registrars, all domain name transactions can be made instantaneously through the domain API. To do this, define your domainnameapi.com client account information in the following fields.',
-    'importTldButton'      => 'Import',
+    'importTldButton'      => 'Importer plus de 750 extensions',
     'fields'               => [
         'balance'    => "Équilibre",
         'username'   => 'Reseller Utilisateur',
@@ -24,7 +24,7 @@ return [
     'tabImport'            => 'Import',
     'testButton'           => 'Tester la connexion',
     'importNote'           => 'You can easily transfer the domain names that are already registered in provider\'s system. The imported domain names are created as an addon, domain names that are currently registered in system are marked green.',
-    'importStartButton'    => 'Importer plus de 750 extensions',
+    'importStartButton'    => 'Import',
     'saveButton'           => "Enregistrer les param\xc3\xa8tres",
     'error1'               => 'API information is not available',
     'error2'               => 'Domain and extension information are not present',

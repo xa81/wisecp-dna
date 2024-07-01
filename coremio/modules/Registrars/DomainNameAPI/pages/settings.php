@@ -104,17 +104,19 @@ $soap_exists = class_exists("SoapClient");
             </div>
 
             <?php
-            $balance=[];
-            try{
+            $balance = [];
+            try {
                 $balance       = $module->getDNABalance();
-            $balance_total = 0;
-            if (isset($balance['balances'])) {
-                foreach ($balance['balances'] as $key => $value) {
-                    $balance_total += $value["balance"];
+                $balance_total = 0;
+                if (isset($balance['balances'])) {
+                    foreach ($balance['balances'] as $key => $value) {
+                        $balance_total += $value["balance"];
+                    }
+                } else {
+                    $module->error = 'Username or password is incorrect. Please check your API information.';
                 }
-            }
-            }catch (Exception $e){
-                $module->error = 'API information is not available';
+            } catch (Exception $e) {
+                $module->error = 'API information is not available ' . $e->getMessage();
             }
 
             ?>
@@ -146,7 +148,7 @@ $soap_exists = class_exists("SoapClient");
             </div>
 
 
-            <div class="formcon">
+            <div class="formcon" <?php if (!isset($balance['balances'])) { echo "style='display:none'"; } ?> >
                 <div class="yuzde30"><?php echo $LANG["fields"]["importTld"]; ?></div>
                 <div class="yuzde70">
                     <a class="lbtn" href="javascript:open_modal('DomainNameAPI_import_tld');void 0;"><?php echo $LANG["importTldButton"]; ?></a>

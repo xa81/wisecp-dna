@@ -3,7 +3,7 @@
 return [
     'name'                 => 'DomainNameAPI',
     'description'          => "Mit Domainnameapi.com, einem der beliebtesten Domainnamen-Registrare, k\xc3\xb6nnen alle Domainnamen-Transaktionen sofort \xc3\xbcber die Domain-API durchgef\xc3\xbchrt werden. Definieren Sie dazu in den folgenden Feldern Ihre Domainnameapi.com-Kundenkontoinformationen.",
-    'importTldButton'      => 'Importieren',
+    'importTldButton'      => 'Über 750 Erweiterungen importieren',
     'fields'               => [
         'balance'    => "Gleichgewicht",
         'username'   => 'Reseller-Benutzername',
@@ -24,7 +24,7 @@ return [
     'tabImport'            => 'Importieren',
     'testButton'           => 'Testverbindung',
     'importNote'           => "Sie k\xc3\xb6nnen problemlos die Domain-Namen \xc3\xbcbertragen, die bereits im System des Anbieters registriert sind. Die importierten Domainnamen werden als Addon erstellt, Domainnamen, die derzeit im System registriert sind, werden gr\xc3\xbcn markiert.",
-    'importStartButton'    => 'Über 750 Erweiterungen importieren',
+    'importStartButton'    => 'Importieren',
     'saveButton'           => 'Einstellungen speichern',
     'error1'               => "API-Informationen sind nicht verf\xc3\xbcgbar",
     'error2'               => 'Domain- und Erweiterungsinformationen sind nicht vorhanden',

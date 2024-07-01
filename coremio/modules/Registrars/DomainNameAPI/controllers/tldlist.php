@@ -13,6 +13,9 @@ $length = (int)Filter::POST("length");
 
 $tlds = $module->list_tlds();
 
+if(!is_array($tlds['tlds'])) {
+    $tlds['tlds'] = [];
+}
 
 
 // Sıralama işlevi

@@ -18,9 +18,9 @@ $domains = $module->domainsdt($pageNumber, $pageLength, $invalidation);
 
 echo Utility::jencode([
     'draw'            => $draw,
-    'data'            => $domains['data'],
-    'recordsTotal'    => $domains['total'],
-    'recordsFiltered' => $domains['total'],
+    'data'            => is_array($domains['data'])? $domains['data'] : [],
+    'recordsTotal'    => is_array($domains['data'])?$domains['total']:0,
+    'recordsFiltered' =>is_array($domains['data'])?$domains['total']:0,
 ]);
 
 

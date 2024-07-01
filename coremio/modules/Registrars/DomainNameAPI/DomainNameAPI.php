@@ -29,8 +29,9 @@ class DomainNameAPI {
             return false;
         }
 
-        if (!class_exists("\DomainNameApi\DomainNameAPI_PHPLibrary"))
+        if (!class_exists("\DomainNameApi\DomainNameAPI_PHPLibrary")) {
             include __DIR__ . DS . "api.php";
+        }
 
         if (isset($this->config["settings"]["whidden-amount"])) {
             $whidden_amount            = $this->config["settings"]["whidden-amount"];
@@ -56,9 +57,11 @@ class DomainNameAPI {
      * Set credentials
      * @return bool
      */
-    private function set_credentials() {
-        if ($this->api)
+    private function set_credentials()
+    {
+        if ($this->api) {
             return false;
+        }
         $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($this->username, $this->password, $this->tmode);
     }
 
@@ -1001,9 +1004,9 @@ class DomainNameAPI {
             return false;
         }
 
-        $result = [
-            'data'            => [],
-            'total'    => 0,
+        $result    = [
+            'data'  => [],
+            'total' => 0,
         ];
         $user_data = [];
 

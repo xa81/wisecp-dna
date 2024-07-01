@@ -3,7 +3,7 @@
 return [
     'name'                 => 'DomainNameAPI',
     'description'          => "Popüler alan adı tescil firmalarından biri olan domainnameapi.com ile domain api üzerinden tüm alan adı işlemlerini anlık olarak sağlayabilirsiniz. Bunun için domainnameapi.com müşteri hesabı bilgilerinizi aşağıdaki alanlara tanımlayınız.",
-    'importTldButton'      => "İçeri Aktar",
+    'importTldButton'      => "750+ Uzantıyı İçeri Aktar",
     'fields'               => [
         'balance'       => "Bakiye",
         'username'      => "Bayi Kullanıcı Adınız",
@@ -26,7 +26,7 @@ return [
     'tabImport'            => "Alan Adlarını İçeri Aktar",
     'testButton'           => "Bağlantıyı test et",
     'importNote'           => "Servis sağlayıcı üzerinde bulunan alan adlarını, mevcut müşterilerinize kolaylıkla aktarabilirsiniz. Bu işlemi yaptığınızda, ilgili alan adları sipariş olarak müşterilerinize tanımlanır. Sistemde zaten kayıtlı olan alan adları yeşil olarak renklendirilmiştir.",
-    'importStartButton'    => "750+ Uzantıyı İçeri Aktar",
+    'importStartButton'    => "İçeri Aktar",
     'saveButton'           => "Ayarları Kaydet",
     'error1'               => "Api bilgileri mevcut değil.",
     'error2'               => "Domain ve uzantı bilgisi gelmedi.",

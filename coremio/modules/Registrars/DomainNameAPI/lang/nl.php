@@ -3,7 +3,7 @@
 return [
     'name'                 => 'DomainNameAPI',
     'description'          => 'Met domeinnameapi.com, een van de populaire domeinnaamregistrars, kunnen alle domeinnaamtransacties onmiddellijk worden uitgevoerd via de domein -API. Definieer hiervoor uw domainnameapi.com -clientaccountinformatie in de volgende velden.',
-    'importTldButton'      => 'Importeren',
+    'importTldButton'      => 'Meer dan 750 extensies importeren',
     'fields'               => [
         'balance'    => "Evenwicht",
         'username'   => 'Reseller gebruikersnaam',
@@ -24,7 +24,7 @@ return [
     'tabImport'            => 'Importeren',
     'testButton'           => 'Test verbinding',
     'importNote'           => "U kunt eenvoudig de domeinnamen overdragen die al zijn geregistreerd in het systeem van de provider. De ge\xc3\xafmporteerde domeinnamen worden gemaakt als een add -on, domeinnamen die momenteel zijn geregistreerd in het systeem zijn gemarkeerd groen.",
-    'importStartButton'    => 'Meer dan 750 extensies importeren',
+    'importStartButton'    => 'Importeren',
     'saveButton'           => 'Instellingen opslaan',
     'error1'               => 'API -informatie is niet beschikbaar',
     'error2'               => 'Domein- en uitbreidingsinformatie is niet aanwezig',
