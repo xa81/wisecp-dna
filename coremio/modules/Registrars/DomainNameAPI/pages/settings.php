@@ -104,13 +104,19 @@ $soap_exists = class_exists("SoapClient");
             </div>
 
             <?php
-            $balance       = $module->getDNABalance();
+            $balance=[];
+            try{
+                $balance       = $module->getDNABalance();
             $balance_total = 0;
             if (isset($balance['balances'])) {
                 foreach ($balance['balances'] as $key => $value) {
                     $balance_total += $value["balance"];
                 }
             }
+            }catch (Exception $e){
+                $module->error = 'API information is not available';
+            }
+
             ?>
 
 
