@@ -21,10 +21,6 @@ class DomainNameAPI {
 
     function __construct($external = []) {
 
-        if (!class_exists("\DomainNameApi\DomainNameAPI_PHPLibrary")) {
-            require_once __DIR__ . DS . "api.php";
-        }
-
         $this->config = Modules::Config("Registrars", __CLASS__);
         $this->lang   = Modules::Lang("Registrars", __CLASS__);
         if (is_array($external) && sizeof($external) > 0)
@@ -34,7 +30,9 @@ class DomainNameAPI {
             return false;
         }
 
-
+        if (!class_exists("\DomainNameApi\DomainNameAPI_PHPLibrary")) {
+            include __DIR__ . DS . "api.php";
+        }
 
         if (isset($this->config["settings"]["whidden-amount"])) {
             $whidden_amount            = $this->config["settings"]["whidden-amount"];
@@ -52,8 +50,6 @@ class DomainNameAPI {
         $this->password = $password;
         $this->tmode    = $tmode;
 
-
-
     }
 
     /**
@@ -63,8 +59,8 @@ class DomainNameAPI {
      */
     private function set_credentials()
     {
-        if (class_exists("\DomainNameApi\DomainNameAPI_PHPLibrary")) {
-            return false;
+        if ($this->api instanceof \DomainNameApi\DomainNameAPI_PHPLibrary) {
+            return $this->api;
         }
         $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($this->username, $this->password);
     }
@@ -125,8 +121,10 @@ class DomainNameAPI {
             $this->error = $this->lang["error2"];
             return false;
         }
-        $response = $this->api->CheckAvailability([$sld], $tlds, 1, "create");
 
+        $response = $this->rememberCache("domain_query_".md5(json_encode([$sld, $tlds])),function () use ($sld, $tlds){
+            return $this->api->CheckAvailability([$sld], $tlds, 1, "create");
+        },60);
 
         $result = [];
         foreach ($response as $domain) {
@@ -1549,16 +1547,13 @@ class DomainNameAPI {
         return true;
     }
 
-    public function getDNABalance()
+    public function getDNAUser()
     {
         $this->set_credentials();
 
-        $response = $this->api->GetResellerDetails();
-
-        if($response["result"] != "OK"){
-            $this->error = $response["ErrorCode"]." : ".$response["error"];
-            return false;
-        }
+        $response =$this->rememberCache("dna_user", function () {
+            return $this->api->GetResellerDetails();
+        }, 180);
 
         return $response;
     }
@@ -1566,14 +1561,6 @@ class DomainNameAPI {
 
     public function rememberCache($key, $function, $ttl = 3600)
     {
-        //check table exist
-        $table_exists = Models::$init->db->query('SHOW TABLES LIKE "mod_dna_cache_elements"')
-                                         ->rowCount();
-        if ($table_exists !== 1) {
-            Models::$init->db->query('CREATE TABLE IF NOT EXISTS mod_dna_cache_elements (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(255),content LONGTEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME,INDEX index_cache_name (name) ); ')
-                             ->execute();
-        }
-
         // Güvenli bir hash algoritması kullanın
         $cache_key = "DNA-" . substr($key, 0, 10) . '_' . hash('sha256', $this->username . $this->password . '-' . $key);
 

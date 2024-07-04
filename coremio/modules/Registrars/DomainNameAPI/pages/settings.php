@@ -1,6 +1,6 @@
 <?php
 if (!defined("CORE_FOLDER")){die();}
-/** @var  $module */
+/** @var  $module  DomainNameAPI*/
 $LANG   = $module->lang;
 $CONFIG = $module->config;
 Helper::Load("Money");
@@ -103,47 +103,12 @@ $soap_exists = class_exists("SoapClient");
                 </div>
             </div>
 
-            <?php
-            $balance = [];
-            try {
-                $balance       = $module->getDNABalance();
-                $balance_total = 0;
-                if (isset($balance['balances'])) {
-                    foreach ($balance['balances'] as $key => $value) {
-                        $balance_total += $value["balance"];
-                    }
-                } else {
-                    $module->error = 'Username or password is incorrect. Please check your API information.';
-                }
-            } catch (Exception $e) {
-                $module->error = 'API information is not available ' . $e->getMessage();
-            }
-
-            ?>
-
 
 
             <div class="formcon">
                 <div class="yuzde30"><?php echo $LANG["fields"]["balance"]; ?></div>
-                <div class="yuzde70" style="<?php echo $balance_total > 0 ? 'color: #4CAF50;font-weight:bold' : 'color: #F44336;font-weight:bold;'; ?>">
-                    <?php
-                    if (!isset($balance['balances'])) {
-                        ?>
-                        <div class="red-info"><span class="padding10"><?php echo $module->error; ?></span></div><?php
-                    } else {
+                <div class="yuzde70 js-balance" >
 
-                        $balance_texts = [];
-
-                        foreach ($balance['balances'] as $k => $v) {
-                            if ($v["balance"] > 0) {
-                                $balance_texts[] = $v["balance"] . " " . $v["currency"];
-                            }
-                        }
-                        echo implode(", ", $balance_texts);
-                    }
-                    ?>
-
-                    <div class="clear"></div>
                 </div>
             </div>
 
@@ -432,6 +397,11 @@ $soap_exists = class_exists("SoapClient");
     module    : 'DomainNameAPI',
     controller: 'import-tld',
   };
+  const userInfoRequest = {
+    operation : 'module_controller',
+    module    : 'DomainNameAPI',
+    controller: 'userinfo',
+  };
 
   const languageUrl = "<?php echo APP_URI; ?>/<?php echo ___("package/code"); ?>/datatable/lang.json";
   const allText = "<?php echo ___("needs/allOf"); ?>";
@@ -463,7 +433,7 @@ $soap_exists = class_exists("SoapClient");
   const numofTLDNotSyncedTxtMessage = "<?php echo $LANG['numofTLDNotSyncedTxt'];?>";
   const stillProcessingMessage = "<?php echo $LANG['stillProcessing'];?>";
   const expectedProfitRate = <?php echo Config::get('options/domain-profit-rate') * 1; ?>;
-  
+
   let queueTable;
   let tldTable;
   let importTabInit = false;
@@ -640,6 +610,11 @@ $soap_exists = class_exists("SoapClient");
        $('.mod-show-ready').show();
     }, 1700);
 
+
+    setTimeout(function() {
+       getBalanceInfo();
+    }, 500);
+
     $('#DomainNameAPI_import_tld_submit').on('click', function() {
       var request = MioAjax({
         button_element: this,
@@ -741,7 +716,7 @@ $soap_exists = class_exists("SoapClient");
       });
     });
 
-  $('#dna-import-submit').on('click', function() {
+    $('#dna-import-submit').on('click', function() {
       const queueLength = queueTable.rows().data().length;
     if (queueLength === 0) {
       swal({
@@ -878,7 +853,20 @@ $soap_exists = class_exists("SoapClient");
 
   });
 
+  function getBalanceInfo() {
 
+    $('.js-balance').html('<div class="loader" style="scale: 0.4"></div>');
+
+    $.post(requestUrl, userInfoRequest, function(response) {
+
+      let style_attr = response.loggedin === true ? 'color: #4CAF50;font-weight:bold' : 'color: #F44336;font-weight:bold';
+      let icon = response.loggedin === true ? '<i class="fa fa-check"></i>' : '<i class="fa fa-exclamation-circle" aria-hidden="true"></i>';
+
+      $('.js-balance').attr('style', style_attr);
+      $('.js-balance').html('<span>'+icon+' '+response.message+'</span>');
+
+    }, 'json');
+  }
 
   function processQueue(queueLength) {
       const queueData = queueTable.rows().data().toArray();

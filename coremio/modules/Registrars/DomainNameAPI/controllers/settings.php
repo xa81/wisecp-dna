@@ -80,6 +80,14 @@ if ($sets) {
     ]);
 }
 
+//check table exist
+$table_exists = Models::$init->db->query('SHOW TABLES LIKE "mod_dna_cache_elements"')
+                                 ->rowCount();
+if ($table_exists !== 1) {
+    Models::$init->db->query('CREATE TABLE IF NOT EXISTS mod_dna_cache_elements (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(255),content LONGTEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME,INDEX index_cache_name (name) ); ')
+                     ->execute();
+}
+
 echo Utility::jencode([
     'status'  => "successful",
     'message' => $lang["success1"],
