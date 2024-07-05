@@ -18,6 +18,7 @@ class DomainNameAPI {
     public  $whidden = [];
     private $order   = [];
     private $username, $password, $tmode;
+    private $domainCacheTTL= 1024;
 
     function __construct($external = []) {
 
@@ -45,6 +46,10 @@ class DomainNameAPI {
         $password = $this->config["settings"]["password"];
         $password = Crypt::decode($password, Config::get("crypt/system"));
         $tmode    = (bool)$this->config["settings"]["test-mode"];
+        
+        if (isset($this->config["settings"]["dom-cache-ttl"])) {
+            $this->domainCacheTTL      = $this->config["settings"]["dom-cache-ttl"];
+        }
 
         $this->username = $username;
         $this->password = $password;
@@ -362,7 +367,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_".$domain;
         $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
             return $this->api->getDetails($domain);
-        },1024);
+        },$this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
@@ -393,7 +398,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_" . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
-        }, 1024);
+        }, $this->domainCacheTTL);
 
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
@@ -432,7 +437,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_".$domain;
         $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
             return $this->api->getDetails($domain);
-        },1024);
+        },$this->domainCacheTTL);
 
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
@@ -473,7 +478,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_" . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
-        }, 1024);
+        }, $this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
@@ -507,7 +512,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_" . $domain;
         $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
             return $this->api->getDetails($domain);
-        },1024);
+        },$this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
@@ -542,7 +547,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_" . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
-        }, 1024);
+        }, $this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
@@ -571,7 +576,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_" . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
-        }, 1024);
+        }, $this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
@@ -594,7 +599,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_" . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
-        }, 1024);
+        }, $this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
@@ -728,7 +733,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_" . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
-        }, 1024);
+        }, $this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
@@ -750,7 +755,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_" . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
-        }, 1024);
+        }, $this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
@@ -772,7 +777,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_" . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
-        }, 1024);
+        }, $this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
@@ -804,7 +809,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_" . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
-        }, 1024);
+        }, $this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
@@ -836,7 +841,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_".$domain;
         $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
             return $this->api->getDetails($domain);
-        },1024);
+        },$this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->error = $domainDetail["error"]["Details"];
             return false;
@@ -919,7 +924,7 @@ class DomainNameAPI {
         $domainCacheKey = "dom_" . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
-        }, 1024);
+        }, $this->domainCacheTTL);
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
@@ -945,7 +950,7 @@ class DomainNameAPI {
 
          $contacts  =$this->rememberCache('cnt_'.$domainCacheKey,function () use ($domain){
             return $this->api->GetContacts($domain);
-        },1024);
+        },$this->domainCacheTTL);
 
         $whois_data = $contacts["data"]["contacts"];
 
