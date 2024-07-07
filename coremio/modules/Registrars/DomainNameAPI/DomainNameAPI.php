@@ -11,14 +11,17 @@
  */
 
 class DomainNameAPI {
+
+    /** @var $api bool|\DomainNameApi\DomainNameAPI_PHPLibrary|\DNA\Service */
     public  $api     = false;
     public  $config  = [];
     public  $lang    = [];
     public  $error   = NULL;
     public  $whidden = [];
     private $order   = [];
-    private $username, $password, $tmode;
+    private $username, $password, $tmode, $resellerId;
     private $domainCacheTTL= 1024;
+    private $apiV2 = false;
 
     function __construct($external = []) {
 
@@ -31,9 +34,29 @@ class DomainNameAPI {
             return false;
         }
 
-        if (!class_exists("\DomainNameApi\DomainNameAPI_PHPLibrary")) {
-            include __DIR__ . DS . "api.php";
+        if(isset($this->config["settings"]["api-version"]) && $this->config["settings"]["api-version"]===true){
+            $this->apiV2 = true;
         }
+
+        if ($this->apiV2 === true) {
+            if (!trait_exists('DNA\ModifierTrait')) {
+                $v1dir = __DIR__ . DS . 'libraries' . DS . 'v2' . DS . 'DNA' . DS;
+                require_once $v1dir . 'ModifierTrait.php';
+                require_once $v1dir . 'DomainTrait.php';
+                require_once $v1dir . 'Client.php';
+                require_once $v1dir . 'ServiceFactory.php';
+                require_once $v1dir . 'SSLTrait.php';
+                require_once $v1dir . 'Service.php';
+            }
+        } else {
+            if (!class_exists("\DomainNameApi\DomainNameAPI_PHPLibrary")) {
+                $v2dir = __DIR__ . DS . 'libraries' . DS . 'v1' . DS;
+                include $v2dir . "api.php";
+            }
+        }
+
+
+
 
         if (isset($this->config["settings"]["whidden-amount"])) {
             $whidden_amount            = $this->config["settings"]["whidden-amount"];
@@ -46,7 +69,8 @@ class DomainNameAPI {
         $password = $this->config["settings"]["password"];
         $password = Crypt::decode($password, Config::get("crypt/system"));
         $tmode    = (bool)$this->config["settings"]["test-mode"];
-        
+        $resellerId = $this->config["settings"]["resellerid"];
+
         if (isset($this->config["settings"]["dom-cache-ttl"])) {
             $this->domainCacheTTL      = $this->config["settings"]["dom-cache-ttl"];
         }
@@ -54,7 +78,43 @@ class DomainNameAPI {
         $this->username = $username;
         $this->password = $password;
         $this->tmode    = $tmode;
+        $this->resellerId    = $resellerId;
 
+    }
+
+    public function setApiInstance($v2, $username, $password, $resellerId)
+    {
+        if ($v2 === true) {
+            //OVERRIDE
+            $username   = 'dnatest';
+            $password   = 'Dnatest123*';
+            $resellerid = '2bf2ba09-6c9d-4012-9cfe-8b4c10e7e6e5';
+
+            $this->apiV2 = true;
+
+            if ($this->api instanceof \DNA\Service) {
+                return $this->api;
+            }
+
+            $reseller_token = $this->rememberCache('auth_token_' . md5($username . $password . $resellerid),
+                function () use ($username, $password, $resellerid) {
+                    $service = \DNA\ServiceFactory::createWithCredentials($username, $password, $resellerid);
+
+                    if ($service->isAuthenticated()) {
+                        return $service->getToken();
+                    } else {
+                        return false;
+                    }
+                }, 1500);
+
+            return $this->api = \DNA\ServiceFactory::createWithToken($reseller_token, $resellerid);
+        } else {
+            $this->apiV2 = false;
+            if ($this->api instanceof \DomainNameApi\DomainNameAPI_PHPLibrary) {
+                return $this->api;
+            }
+            return $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($username, $password);
+        }
     }
 
     /**
@@ -64,10 +124,7 @@ class DomainNameAPI {
      */
     private function set_credentials()
     {
-        if ($this->api instanceof \DomainNameApi\DomainNameAPI_PHPLibrary) {
-            return $this->api;
-        }
-        $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($this->username, $this->password);
+        $this->api = $this->setApiInstance($this->apiV2, $this->username, $this->password, $this->resellerId);
     }
 
 
@@ -80,12 +137,14 @@ class DomainNameAPI {
      * Set config
      * @return string
      */
-    private function setConfig($username, $password, $tmode) {
+    private function setConfig($username, $password, $resellerId='',$apiV2 = false) {
+
+        $this->config["settings"]["api-version"] = $apiV2;
         $this->config["settings"]["username"]  = $username;
         $this->config["settings"]["password"]  = $password;
-        //$this->config["settings"]["test-mode"] = $tmode;
+        $this->config["settings"]["resellerid"]  = $resellerId;
 
-        $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($username, $password);
+        $this->api = $this->setApiInstance($apiV2, $username, $password, $resellerId);
     }
 
     /**
@@ -93,26 +152,35 @@ class DomainNameAPI {
      * @param $config
      * @return bool
      */
-    public function testConnection($config = []) {
-        $username = $config["settings"]["username"];
-        $password = $config["settings"]["password"];
+    public function testConnection($config = [])
+    {
+        $username   = $config["settings"]["username"];
+        $password   = $config["settings"]["password"];
+        $resellerId = $config["settings"]["resellerid"];
+        $apiv2      = $config["settings"]["api-version"];
 
         if (!$username || !$password) {
             $this->error = $this->lang["error8"];
             return false;
         }
-
         $password = Crypt::decode($password, Config::get("crypt/system"));
-        $tmode    = false;
-        $this->setConfig($username, $password, $tmode);
 
-            $check   = $this->api->GetResellerDetails();
+        $this->setConfig($username, $password, $resellerId, $apiv2);
 
-            if($check["result"] != "OK"){
-                $this->error = $check["error"]["Details"];
-            return false;
+        if ($apiv2) {
+            $result = $this->api->getCurrentBalance();
+            if ($result['success'] !== true) {
+                $this->error = $result["error"]["code"] . " - " . $result["error"]["message"];
+                return false;
             }
+        } else {
+            $check = $this->api->GetResellerDetails();
 
+            if ($check["result"] != "OK") {
+                $this->error = $check["error"]["Details"];
+                return false;
+            }
+        }
         return true;
     }
 
@@ -120,35 +188,72 @@ class DomainNameAPI {
      * Get TLDs
      * @return array
      */
-    public function questioning($sld = NULL, $tlds = []) {
+    public function questioning($sld = null, $tlds = [])
+    {
         $this->set_credentials();
-        if ($sld == '' || empty($tlds)) {
+
+        // Hatalı parametre kontrolü
+        if (empty($sld) || empty($tlds)) {
             $this->error = $this->lang["error2"];
             return false;
         }
-
-        $response = $this->rememberCache("domain_query_".md5(json_encode([$sld, $tlds])),function () use ($sld, $tlds){
-            return $this->api->CheckAvailability([$sld], $tlds, 1, "create");
-        },60);
-
         $result = [];
-        foreach ($response as $domain) {
-            if(isset($domain['tld'])){
-               $result[$domain["TLD"]] = [
-                'status' => $domain["Status"] == "available" ? "available" : "unavailable",
-            ];
-            if (isset($domain["ClassKey"]) && $domain["ClassKey"] == "premium") {
-                $result[$domain["TLD"]]['premium']       = true;
-                $result[$domain["TLD"]]['premium_price'] = [
-                    'amount'   => number_format($domain["Price"], 2, '.', ''),
-                    'currency' => $domain["Currency"],
-                ];
-            }
-            }
 
+        $cacheKey = "domain_query_" . md5(json_encode([$sld, $tlds]));
+
+        // API v2 kontrolü
+        if ($this->apiV2) {
+
+            $response = $this->api->rememberCache($cacheKey, function () use ($sld, $tlds) {
+                return $this->api->checkAvailability([$sld], $tlds);
+            }, 60);
+
+            foreach ($response as $domain) {
+                if (isset($domain['info'])) {
+                    $domainName  = $domain['info']['domainName'];
+                    $firstDotPos = strpos($domainName, '.');
+                    $sld         = substr($domainName, 0, $firstDotPos);
+                    $tld         = substr($domainName, $firstDotPos);
+
+                    $status = ($domain['info']['status'] == 'AVAILABLE') ? 'available' : 'unavailable';
+
+                    $result[$tld] = ['status' => $status];
+
+                    if (isset($domain['info']['isPremium']) && $domain['info']['isPremium'] == '1') {
+                        $result[$tld]['premium']       = true;
+                        $result[$tld]['premium_price'] = [
+                            'amount'   => number_format($domain['info']['price'], 2, '.', ''),
+                            'currency' => 'USD',
+                        ];
+                    }
+                }
+            }
+        } else {
+
+            $response = $this->rememberCache($cacheKey, function () use ($sld, $tlds) {
+                return $this->api->CheckAvailability([$sld], $tlds, 1, "create");
+            }, 60);
+
+            foreach ($response as $domain) {
+                if (isset($domain['TLD'])) {
+                    $status = ($domain['Status'] == 'available') ? 'available' : 'unavailable';
+
+                    $result[$domain['TLD']] = ['status' => $status];
+
+                    if (isset($domain['ClassKey']) && $domain['ClassKey'] == 'premium') {
+                        $result[$domain['TLD']]['premium']       = true;
+                        $result[$domain['TLD']]['premium_price'] = [
+                            'amount'   => number_format($domain['Price'], 2, '.', ''),
+                            'currency' => $domain['Currency'],
+                        ];
+                    }
+                }
+            }
         }
+
         return $result;
     }
+
 
 
     /**
@@ -165,61 +270,16 @@ class DomainNameAPI {
      */
     public function register($domain = '', $sld = '', $tld = '', $year = 1, $dns = [], $whois = [], $wprivacy = false, $tcode = NULL) {
         $this->set_credentials();
-        $detail = $this->api->GetDetails($domain);
-        if ($detail["result"] == "OK") {
 
-            if ($detail["data"]["Status"] != "Active")
-                return [
-                    'status' => "FAIL",
-                    //'message' => $this->lang["error6"],
-                ]; else
-                return ['config' => ["ID" => $detail["data"]["ID"]]];
-        }
-
-        $whois = $this->contactProcess($whois);
-
-        $dns = array_values($dns);
-
-        $additional = [];
-
-        if (substr("com.tr", -3) == ".tr") {
-            $additional['TRABISDOMAINCATEGORY'] = $whois['Registrant']['Company'] ? 0 : 1;
-            $additional['TRABISCOUNTRYID']      = $whois['Registrant']['Country'] == "TR" ? 215 : 888;
-            $additional['TRABISCOUNTRYNAME']    = $whois['Registrant']['Country'];
-            $additional['TRABISCITYNAME']       = $whois['Registrant']['City'];
-            $additional['TRABISCITIYID']        = 888;
-
-            $user = User::getInfo($this->order["owner_id"], [
+        $user = User::getInfo($this->order["owner_id"], [
                 'identity',
                 'company_tax_number',
                 'company_tax_office'
-            ]);
+        ]);
 
-            $identity     = "11111111111";
-            $name_surname = $whois["Registrant"]['FirstName'] . ' ' . $whois["Registrant"]['LastName'];
-            $tax_number   = '1111111111';
-            $tax_office   = 'Bilinmiyor';
-
-
-            if ($user) {
-                if ($user['identity'])
-                    $identity = $user['identity'];
-                if ($user["company_tax_office"])
-                    $tax_office = $user["company_tax_office"];
-                if ($user["company_tax_number"])
-                    $tax_number = $user["company_tax_number"];
-            }
-
-            if ($whois['Registrant']['Company']) {
-                $additional['TRABISORGANIZATION'] = $whois["Registrant"]["Company"];
-                $additional['TRABISTAXOFFICE']    = $tax_office;
-                $additional['TRABISTAXNUMBER']    = $tax_number;
-            } else {
-                $additional['TRABISCITIZIENID']  = $identity;
-                $additional['TRABISNAMESURNAME'] = $name_surname;
-            }
-
-        }
+        $whois = $this->contactProcess($whois);
+        $additional = $this->addionalFieldsProcess($domain,$whois,$user);
+        $dns = array_values($dns);
 
 
         Modules::save_log("Registrars", __CLASS__, "PreRegister", [
@@ -360,27 +420,53 @@ class DomainNameAPI {
      * Nameserver Details
      * @param $params
      * @return array|false
+     * @throws SoapFault
      */
-    public function NsDetails($params = []) {
+    public function NsDetails($params = [])
+    {
         $this->set_credentials();
-        $domain       = trim($params["domain"]);
-        $domainCacheKey = "dom_".$domain;
-        $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
-            return $this->api->getDetails($domain);
-        },$this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
-        }
+        $domain         = trim($params["domain"]);
+        $domainCacheKey = "dom_" . $domain;
 
         $returns = [];
 
-        foreach (range(0,5) as $k => $v) {
-            if (isset($domainDetail["data"]["[NameServers"][$k])) {
-                $returns["ns" . ($k + 1)] = $domainDetail["data"]["[NameServers"][$k];
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDomainDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["success"] !== true) {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
             }
+
+            $nameservers = $domainDetail["nameservers"] ?? null;
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            $nameservers = $domainDetail["data"]["NameServers"] ?? null;
         }
+
+        if (is_array($nameservers)) {
+            foreach ([0, 1, 2, 3, 4] as $v) {
+                if (isset($nameservers[$v])) {
+                    $returns["ns" . ($v + 1)] = $nameservers[$v];
+                }
+            }
+        } elseif ($nameservers !== null) {
+            // Tek bir nameserver varsa
+            $returns["ns1"] = $nameservers;
+        }
+
 
         return $returns;
     }
@@ -390,35 +476,54 @@ class DomainNameAPI {
      * @param $params
      * @param $dns
      * @return bool
+     * @throws SoapFault
      */
     public function ModifyDns($params = [], $dns = [])
     {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
         $domainCacheKey = "dom_" . $domain;
-        $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
-            return $this->api->getDetails($domain);
-        }, $this->domainCacheTTL);
 
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
-        }
 
-        $new_dns = [];
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDomainDetails($domain);
+            }, $this->domainCacheTTL);
 
-        if ($dns) {
-            $dns = array_values($dns);
-            foreach ($dns as $k => $dn) {
-                $new_dns["ns" . ($k + 1)] = $dn;
+            if ($domainDetail["success"] !== true) {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
             }
-        }
 
-        $modifyDns = $this->api->ModifyNameServer($domain, $new_dns);
-        if ($modifyDns["result"] != "OK") {
-            $this->error = $modifyDns["error"]["Details"];
-            return false;
+            $nsList = array_filter(array_values($dns), 'strlen');
+            $result = $this->api->ModifyNameserver($domain, $nsList);
+
+            if ($result["success"] !== true) {
+                $this->error = $result["error"]["code"] . " - " . $result["error"]["message"];
+                return false;
+            }
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            $newDns = [];
+            foreach (array_values($dns) as $index => $dn) {
+                $newDns["ns" . ($index + 1)] = $dn;
+            }
+
+            $modifyDns = $this->api->ModifyNameServer($domain, $newDns);
+            if ($modifyDns["result"] != "OK") {
+                $this->error = $modifyDns["error"]["Details"];
+                return false;
+            }
         }
         $this->invalidateCache($domainCacheKey);
 
@@ -431,37 +536,56 @@ class DomainNameAPI {
      * @param array $params
      * @return bool
      */
-    public function CNSList($params = []) {
+    public function CNSList($params = [])
+    {
         $this->set_credentials();
-        $domain       = trim($params["domain"]);
-        $domainCacheKey = "dom_".$domain;
-        $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
-            return $this->api->getDetails($domain);
-        },$this->domainCacheTTL);
+        $domain         = trim($params["domain"]);
+        $domainCacheKey = "dom_" . $domain;
 
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
-        }
+        $result = [];
 
-        $childNsList = $domainDetail["data"]["ChildNameServers"] ? $domainDetail["data"]["ChildNameServers"] : [];
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDomainDetails($domain);
+            }, $this->domainCacheTTL);
 
-        if ($childNsList) {
-            $result = [];
-            $i      = 0;
-            foreach ($childNsList as $v) {
-                $i          += 1;
-                $result[$i] = [
-                    'ns' => $v["ns"],
-                    'ip' => $v["ip"]
+            if ($domainDetail["success"] !== true) {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
+            }
+
+            $childNsList = $domainDetail["hosts"] ?? [];
+            foreach ($childNsList as $index => $ns) {
+                $result[$index + 1] = [
+                    'ns' => $ns['name'],
+                    'ip' => $ns['ipAddresses'][0]['ipAddress']
                 ];
             }
-            return $result;
         } else {
-            return [];
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            $childNsList = $domainDetail["data"]["ChildNameServers"] ?? [];
+
+            foreach ($childNsList as $index => $ns) {
+                $result[$index + 1] = [
+                    'ns' => $ns["ns"],
+                    'ip' => $ns["ip"]
+                ];
+            }
         }
+
+        return $result;
     }
+
 
 
     /**
@@ -476,20 +600,41 @@ class DomainNameAPI {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
         $domainCacheKey = "dom_" . $domain;
-        $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
-            return $this->api->getDetails($domain);
-        }, $this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
+
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDomainDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["success"] !== true) {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
+            }
+
+            $result = $this->api->addChildNameServer($domain, $ns, $ip);
+
+            if ($result["success"] !== true) {
+                $this->error = $result["error"]["code"] . " - " . $result["error"]["message"];
+                return false;
+            }
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            $addCNS = $this->api->AddChildNameServer($domain, $ns, $ip);
+            if ($addCNS["result"] != "OK") {
+                $this->error = $addCNS["error"]["Details"];
+                return false;
+            }
         }
 
-        $addCNS = $this->api->AddChildNameServer($domain, $ns, $ip);
-        if ($addCNS["result"] != "OK") {
-            $this->error = $addCNS["error"]["Details"];
-            return false;
-        }
         $this->invalidateCache($domainCacheKey);
 
         return [
@@ -510,23 +655,49 @@ class DomainNameAPI {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
         $domainCacheKey = "dom_" . $domain;
-        $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
-            return $this->api->getDetails($domain);
-        },$this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return true;
-        }
 
-        if ($cns["ip"] != $ip) {
-            $cns_ns = $cns["ns"];
-            $modify = $this->api->ModifyChildNameServer($domain, $cns_ns, $ip);
-            if ($modify["result"] != "OK") {
-                $this->error = $modify["error"]["Details"];
+
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDomainDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["success"] !== true) {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
                 return false;
             }
+
+            if ($cns["ip"] != $ip) {
+                $cns_ns = $cns["ns"];
+                $result = $this->api->ModifyChildNameServer($domain, $cns_ns, $ip);
+                if ($result["success"] !== true) {
+                    $this->error = $result["error"]["code"] . " - " . $result["error"]["message"];
+                    return false;
+                }
+            }
+
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return true;
+            }
+
+            if ($cns["ip"] != $ip) {
+                $cns_ns = $cns["ns"];
+                $modify = $this->api->ModifyChildNameServer($domain, $cns_ns, $ip);
+                if ($modify["result"] != "OK") {
+                    $this->error = $modify["error"]["Details"];
+                    return false;
+                }
+            }
         }
+
         $this->invalidateCache($domainCacheKey);
 
         return true;
@@ -545,20 +716,41 @@ class DomainNameAPI {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
         $domainCacheKey = "dom_" . $domain;
-        $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
-            return $this->api->getDetails($domain);
-        }, $this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
+
+
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDomainDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["success"] !== true) {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
+            }
+            $result = $this->api->deleteChildNameServer($domain, $cns);
+            if ($result["success"] !== true) {
+                $this->error = $result["error"]["code"] . " - " . $result["error"]["message"];
+                return false;
+            }
+
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            $delete = $this->api->DeleteChildNameServer($domain, $cns);
+            if ($delete["result"] != "OK") {
+                $this->error = $delete["error"]["Details"];
+                return false;
+            }
         }
 
-        $delete = $this->api->DeleteChildNameServer($domain, $cns);
-        if ($delete["result"] != "OK") {
-            $this->error = $delete["error"]["Details"];
-            return false;
-        }
         $this->invalidateCache($domainCacheKey);
 
         return true;
@@ -574,16 +766,31 @@ class DomainNameAPI {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
         $domainCacheKey = "dom_" . $domain;
-        $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
-            return $this->api->getDetails($domain);
-        }, $this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
-        }
 
-        return $domainDetail["data"]["PrivacyProtectionStatus"] ? "active" : "passive";
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDomainDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["success"] !== true) {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
+            }
+            return $domainDetail['privacyProtectionStatus'] == 1;
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            return $domainDetail["data"]["PrivacyProtectionStatus"] ? "active" : "passive";
+        }
     }
 
     /**
@@ -597,20 +804,33 @@ class DomainNameAPI {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
         $domainCacheKey = "dom_" . $domain;
-        $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
-            return $this->api->getDetails($domain);
-        }, $this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return true;
+
+
+        if ($this->apiV2) {
+            $result = $this->api->saveContacts($domain, $this->contactProcess($whois));
+
+            if ($result["success"] !== true) {
+                $this->error = $result["error"]["code"] . " - " . $result["error"]["message"];
+                return false;
+            }
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return true;
+            }
+
+            $modifyContact = $this->api->SaveContacts($domain, $this->contactProcess($whois));
+            if ($modifyContact["result"] != "OK") {
+                $this->error = $modifyContact["error"]["Details"];
+                return false;
+            }
         }
 
-        $modifyContact = $this->api->SaveContacts($domain, $this->contactProcess($whois));
-        if ($modifyContact["result"] != "OK") {
-            $this->error = $modifyContact["error"]["Details"];
-            return false;
-        }
+
         $this->invalidateCache($domainCacheKey);
         $this->invalidateCache('cnt_' . $domainCacheKey);
         return true;
@@ -622,104 +842,6 @@ class DomainNameAPI {
      * @param string $type
      * @return array
      */
-    public function contactProcess($data = [], $type = 'Contact') {
-        $this->set_credentials();
-        /*
-        if (isset($data["registrant"])) {
-            $whois_data = [];
-            foreach ($data as $k => $v) {
-                $whois_data[ucfirst($k)] = [
-                    "FirstName"        => $v["FirstName"],
-                    "LastName"         => $v["LastName"],
-                    "Company"          => $v["Company"],
-                    "EMail"            => $v["EMail"],
-                    "AddressLine1"     => $v["AddressLine1"],
-                    "State"            => $v["State"],
-                    "City"             => $v["City"],
-                    "Country"          => $v["Country"],
-                    "Fax"              => $v["Fax"],
-                    "FaxCountryCode"   => $v["FaxCountryCode"],
-                    "Phone"            => $v["Phone"],
-                    "PhoneCountryCode" => $v["PhoneCountryCode"],
-                    "Type"             => $type,
-                    "ZipCode"          => $v["ZipCode"],
-                    "Status"           => '',
-                ];
-            }
-
-            return $whois_data;
-        } else {
-            $whois_data = [
-                "FirstName"        => $data["FirstName"],
-                "LastName"         => $data["LastName"],
-                "Company"          => $data["Company"],
-                "EMail"            => $data["EMail"],
-                "AddressLine1"     => $data["AddressLine1"],
-                "State"            => $data["State"],
-                "City"             => $data["City"],
-                "Country"          => $data["Country"],
-                "Fax"              => $data["Fax"],
-                "FaxCountryCode"   => $data["FaxCountryCode"],
-                "Phone"            => $data["Phone"],
-                "PhoneCountryCode" => $data["PhoneCountryCode"],
-                "Type"             => $type,
-                "ZipCode"          => $data["ZipCode"],
-                "Status"           => '',
-            ];
-
-            return [
-                "Administrative" => $whois_data,
-                "Billing"        => $whois_data,
-                "Technical"      => $whois_data,
-                "Registrant"     => $whois_data,
-            ];
-        }
-        */
-
-        $formatWhoisData = function ($v) {
-            $whois_arr= [
-                "FirstName"        => $v["FirstName"],
-                "LastName"         => $v["LastName"],
-                "Company"          => $v["Company"],
-                "EMail"            => $v["EMail"],
-                "AddressLine1"     => $v["AddressLine1"],
-                "State"            => $v["State"],
-                "City"             => $v["City"],
-                "Country"          => $v["Country"],
-                "Fax"              => $v["Fax"],
-                "FaxCountryCode"   => $v["FaxCountryCode"],
-                "Phone"            => $v["Phone"],
-                "PhoneCountryCode" => $v["PhoneCountryCode"],
-                "Type"             => 'Contact',
-                "ZipCode"          => $v["ZipCode"],
-                "Status"           => '',
-            ];
-
-            if(strlen(trim($whois_arr["LastName"])) == 0){
-                $whois_arr["LastName"]= $whois_arr["FirstName"] ;
-            }
-
-            return $whois_arr;
-        };
-
-        if (isset($data["registrant"])) {
-            $whois_data = [];
-            foreach ($data as $k => $v) {
-                $whois_data[ucfirst($k)] = $formatWhoisData($v);
-            }
-            return $whois_data;
-        } else {
-            $whois_data = $formatWhoisData($data);
-            return [
-                "Administrative" => $whois_data,
-                "Billing"        => $whois_data,
-                "Technical"      => $whois_data,
-                "Registrant"     => $whois_data,
-            ];
-        }
-
-    }
-
 
     /**
      * Get Transfer Lock
@@ -731,16 +853,29 @@ class DomainNameAPI {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
         $domainCacheKey = "dom_" . $domain;
-        $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
-            return $this->api->getDetails($domain);
-        }, $this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
-        }
 
-        return $domainDetail["data"]["LockStatus"] == "true";
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["success"] !== true) {
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
+            }
+
+            return $domainDetail['lockStatus'] == 1;
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            return $domainDetail["data"]["LockStatus"] == "true";
+        }
     }
 
     /**
@@ -753,15 +888,33 @@ class DomainNameAPI {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
         $domainCacheKey = "dom_" . $domain;
-        $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
-            return $this->api->getDetails($domain);
-        }, $this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
+
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["success"] !== true) {
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
+            }
+
+            return $domainDetail["status"] != "Active";
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            return $domainDetail["data"]["Status"] != "Active";
         }
-        return $domainDetail["data"]["Status"] != "Active";
+
+
+
+
     }
 
     /**
@@ -775,21 +928,42 @@ class DomainNameAPI {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
         $domainCacheKey = "dom_" . $domain;
-        $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
-            return $this->api->getDetails($domain);
-        }, $this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
+
+
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["success"] !== true) {
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
+            }
+
+            $modify = $type == "enable" ? $this->api->enableTheftProtectionLock($domain) : $this->api->disableTheftProtectionLock($domain);
+
+            if ($modify["success"] !== true) {
+                $this->error = $modify["error"]["code"] . " - " . $modify["error"]["message"];
+                return false;
+            }
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            $modify = $type == "enable" ? $this->api->EnableTheftProtectionLock($domain) : $this->api->DisableTheftProtectionLock($domain);
+
+            if ($modify["result"] != "OK") {
+                $this->error = $modify["error"]["Details"];
+                return false;
+            }
         }
 
-        $modify = $type == "enable" ? $this->api->EnableTheftProtectionLock($domain) : $this->api->DisableTheftProtectionLock($domain);
 
-        if ($modify["result"] != "OK") {
-            $this->error = $modify["error"]["Details"];
-            return false;
-        }
         $this->invalidateCache($domainCacheKey);
 
         return true;
@@ -807,20 +981,40 @@ class DomainNameAPI {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
         $domainCacheKey = "dom_" . $domain;
-        $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
-            return $this->api->getDetails($domain);
-        }, $this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
+
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["success"] !== true) {
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
+            }
+
+            $modify = $this->api->modifyPrivacyProtectionStatus($domain, $staus);
+
+            if ($modify["success"] !== true) {
+                $this->error = $modify["error"]["code"] . " - " . $modify["error"]["message"];
+                return false;
+            }
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            $modify = $this->api->ModifyPrivacyProtectionStatus($domain, $staus);
+            if ($modify["result"] != "OK") {
+                $this->error = $modify["error"]["Details"];
+                return false;
+            }
         }
 
-        $modify = $this->api->ModifyPrivacyProtectionStatus($domain, $staus);
-        if ($modify["result"] != "OK") {
-            $this->error = $modify["error"]["Details"];
-            return false;
-        }
+
         $this->invalidateCache($domainCacheKey);
 
         return true;
@@ -835,238 +1029,207 @@ class DomainNameAPI {
         return $this->modifyPrivacyProtection($params, true);
     }
 
-    public function getAuthCode($params = []) {
+    public function getAuthCode($params = [])
+    {
         $this->set_credentials();
-        $domain       = trim($params["domain"]);
-        $domainCacheKey = "dom_".$domain;
-        $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
-            return $this->api->getDetails($domain);
-        },$this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
+        $domain         = trim($params["domain"]);
+        $domainCacheKey = "dom_" . $domain;
+
+
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["success"] !== true) {
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
+            }
+
+            return $domainDetail['authCode'];
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["result"] != "OK") {
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+            return $domainDetail["data"]["AuthCode"];
         }
-        return $domainDetail["data"]["AuthCode"];
     }
 
     public function sync($params = []) {
         $this->set_credentials();
-        $domain       = $params["domain"];
-        $OrderDetails = $this->api->getDetails($domain);
-        if ($OrderDetails["result"] != "OK") {
-            $this->error = $OrderDetails["error"]["Details"];
-            return false;
+        $domain         = trim($params["domain"]);
+        $domainCacheKey = "dom_" . $domain;
+        $this->invalidateCache($domainCacheKey);
+
+        $return_data = [];
+        $endtime     = $currentstatus = false;
+
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["success"] !== true) {
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
+            }
+
+            $endtime       = isset($domainDetail["expirationDate"]) ? DateManager::format("Y-m-d H:i:s", $domainDetail["expirationDate"]) : false;
+            $currentstatus = $domainDetail["status"] ?? false;
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["result"] != "OK") {
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            $endtime       = isset($domainDetail["data"]["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i:s", $domainDetail["data"]["Dates"]["Expiration"]) : false;
+            $currentstatus = $domainDetail["data"]["Status"] ?? false;
         }
 
-        $endtime       = isset($OrderDetails["data"]["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i:s", $OrderDetails["data"]["Dates"]["Expiration"]) : false;
-        $currentstatus = isset($OrderDetails["data"]["Status"]) ? $OrderDetails["data"]["Status"] : false;
+        $return_data['status'] = 'waiting';
 
-        $return_data = [
-            'status' => 'waiting',
-        ];
-
-        if ($endtime)
+        if ($endtime) {
             $return_data["endtime"] = $endtime;
+        }
 
         if ($currentstatus == "Active") {
             $return_data["status"] = "active";
-        } elseif ($currentstatus == "Expired")
+        } elseif ($currentstatus == "Expired") {
             $return_data["status"] = "expired";
+        }
+
 
         return $return_data;
     }
 
     public function transfer_sync($params = []) {
         $this->set_credentials();
-        $domain       = $params["domain"];
-        $OrderDetails = $this->api->getDetails($domain);
-        if ($OrderDetails["result"] != "OK") {
-            $this->error = $OrderDetails["error"]["Details"];
-            return false;
+
+        $domain         = trim($params["domain"]);
+        $domainCacheKey = "dom_" . $domain;
+        $this->invalidateCache($domainCacheKey);
+
+        $return_data = [];
+        $endtime     = $currentstatus = false;
+
+        if ($this->apiV2) {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+            if ($domainDetail["success"] !== true) {
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
+            }
+
+            $endtime       = isset($domainDetail["expirationDate"]) ? DateManager::format("Y-m-d H:i:s", $domainDetail["expirationDate"]) : false;
+            $currentstatus = $domainDetail["status"] ?? false;
+        } else {
+            $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+                return $this->api->getDetails($domain);
+            }, $this->domainCacheTTL);
+
+            if ($domainDetail["result"] != "OK") {
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            $endtime       = isset($domainDetail["data"]["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i:s", $domainDetail["data"]["Dates"]["Expiration"]) : false;
+            $currentstatus = $domainDetail["data"]["Status"] ?? false;
         }
 
-        $endtime       = isset($OrderDetails["data"]["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i:s", $OrderDetails["data"]["Dates"]["Expiration"]) : false;
-        $currentstatus = isset($OrderDetails["data"]["Status"]) ? $OrderDetails["data"]["Status"] : false;
+        $return_data['status'] = 'waiting';
 
-        $return_data = [
-            'status' => 'waiting',
-        ];
-
-        if ($endtime)
+        if ($endtime) {
             $return_data["endtime"] = $endtime;
+        }
 
         if ($currentstatus == "Active") {
-            $dns = [];
 
-            if (isset($params["ns1"]) && $params["ns1"])
-                $dns[] = $params["ns1"];
-            if (isset($params["ns2"]) && $params["ns2"])
-                $dns[] = $params["ns2"];
-            if (isset($params["ns3"]) && $params["ns3"])
-                $dns[] = $params["ns3"];
-            if (isset($params["ns4"]) && $params["ns4"])
-                $dns[] = $params["ns4"];
+             $dns = [];
+
+             foreach ([1,2,3,4] as $vns) {
+                 if (isset($params["ns{$vns}"]) && $params["ns{$vns}"]) {
+                     $dns[] = $params["ns{$vns}"];
+                 }
+             }
+
 
             $this->ModifyDns(['domain' => $domain], $dns);
             $this->ModifyWhois(['domain' => $domain], $params["whois"]);
 
 
             $return_data["status"] = "active";
-        } elseif ($currentstatus == "Expired")
+        } elseif ($currentstatus == "Expired") {
             $return_data["status"] = "expired";
+        }
 
         return $return_data;
     }
 
-    public function get_info($params = []) {
+    public function get_info($params = [])
+    {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
         $domainCacheKey = "dom_" . $domain;
-        $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
-            return $this->api->getDetails($domain);
+
+        $domainDetail = $this->rememberCache($domainCacheKey, function () use ($domain) {
+            return $this->apiV2 ? $this->api->getDetails($domain) : $this->api->GetDetails($domain);
         }, $this->domainCacheTTL);
-        if ($domainDetail["result"] != "OK") {
-            $this->invalidateCache($domainCacheKey);
-            $this->error = $domainDetail["error"]["Details"];
-            return false;
-        }
 
-        $data = $domainDetail["data"];
-
-        $result = [];
-
-        $cdate   = DateManager::format("Y-m-d H:i:s", $data["Dates"]["Start"]);
-        $duedate = DateManager::format("Y-m-d H:i:s", $data["Dates"]["Expiration"]);
-
-        $wprivacy = $data["PrivacyProtectionStatus"];
-
-        $nameservers = isset($data["NameServers"][0]) ? $data["NameServers"] : [];
-
-        $ns1      = $nameservers[0] ?? false;
-        $ns2      = $nameservers[1] ?? false;
-        $ns3      = $nameservers[2] ?? false;
-        $ns4      = $nameservers[3] ?? false;
-
-
-         $contacts  =$this->rememberCache('cnt_'.$domainCacheKey,function () use ($domain){
-            return $this->api->GetContacts($domain);
-        },$this->domainCacheTTL);
-
-        $whois_data = $contacts["data"]["contacts"];
-
-        if ($whois_data) {
-            $types = [
-                'Registrant',
-                'Administrative',
-                'Technical',
-                'Billing',
-            ];
-
-            $whois = [];
-
-            foreach ($types as $ct) {
-                $s_k = strtolower($ct);
-
-                $w_data = $whois_data[$ct] ?? $whois_data["Registrant"];
-
-                if (!$w_data["Address"]["State"])
-                    $w_data["Address"]["State"] = 'N/A';
-
-                $whois[$s_k] = [
-                    'FirstName'        => $w_data["FirstName"],
-                    'LastName'         => $w_data["LastName"],
-                    'Name'             => $w_data["FirstName"] . ($w_data["LastName"] ? ' ' : '') . $w_data["LastName"],
-                    'Company'          => $w_data["Company"],
-                    'EMail'            => $w_data["EMail"],
-                    'AddressLine1'     => $w_data["Address"]["Line1"],
-                    'City'             => $w_data["Address"]["City"],
-                    'State'            => $w_data["Address"]["State"],
-                    'ZipCode'          => $w_data["Address"]["ZipCode"],
-                    'Country'          => $w_data["Address"]["Country"],
-                    'PhoneCountryCode' => $w_data["Phone"]["Phone"]["CountryCode"],
-                    'Phone'            => $w_data["Phone"]["Phone"]["Number"],
-                    'FaxCountryCode'   => isset($w_data["Phone"]["Fax"]["CountryCode"]) ? $w_data["Phone"]["Fax"]["CountryCode"] : "",
-                    'Fax'              => isset($w_data["Phone"]["Fax"]["Number"]) ? $w_data["Phone"]["Fax"]["Number"] : "",
-                ];
+        if ($this->apiV2) {
+            if ($domainDetail["success"] !== true) {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["code"] . " - " . $domainDetail["error"]["message"];
+                return false;
             }
+
+            $cdate       = DateManager::format("Y-m-d H:i:s", $domainDetail["startDate"]);
+            $duedate     = DateManager::format("Y-m-d H:i:s", $domainDetail["expirationDate"]);
+            $wprivacy    = $domainDetail["privacyProtectionStatus"];
+            $nameservers = $domainDetail['nameservers'];
+            $whois       = $this->formatWhois($domainDetail['contacts']);
+        } else {
+            if ($domainDetail["result"] != "OK") {
+                $this->invalidateCache($domainCacheKey);
+                $this->error = $domainDetail["error"]["Details"];
+                return false;
+            }
+
+            $data        = $domainDetail["data"];
+            $cdate       = DateManager::format("Y-m-d H:i:s", $data["Dates"]["Start"]);
+            $duedate     = DateManager::format("Y-m-d H:i:s", $data["Dates"]["Expiration"]);
+            $wprivacy    = $data["PrivacyProtectionStatus"];
+            $nameservers = $data["NameServers"] ?? [];
+            $contacts    = $this->rememberCache('cnt_' . $domainCacheKey, function () use ($domain) {
+                return $this->api->GetContacts($domain);
+            }, $this->domainCacheTTL);
+            $whois       = $this->formatWhois($contacts["data"]["contacts"]);
         }
 
-        $result["whois_privacy"] = ['status' => $wprivacy ? "enable" : "disable"];
+        $result = [
+            "whois_privacy" => ['status' => $wprivacy ? "enable" : "disable"],
+            "creation_time" => $cdate,
+            "end_time"      => $duedate,
+            "transferlock"  => $this->apiV2 ? ($domainDetail['lockStatus'] == 1) : ($data["LockStatus"] == "true"),
+        ];
 
-        if ($cdate)
-            $result["creation_time"] = $cdate;
-        if ($duedate)
-            $result["end_time"] = $duedate;
+        foreach ($nameservers as $index => $ns) {
+            $result["ns" . ($index + 1)] = $ns;
+        }
 
-        if (isset($ns1) && $ns1)
-            $result["ns1"] = $ns1;
-        if (isset($ns2) && $ns2)
-            $result["ns2"] = $ns2;
-        if (isset($ns3) && $ns3)
-            $result["ns3"] = $ns3;
-        if (isset($ns4) && $ns4)
-            $result["ns4"] = $ns4;
-        if (isset($whois) && $whois)
+        if (!empty($whois)) {
             $result["whois"] = $whois;
-
-        $result["transferlock"] = $data["LockStatus"] == "true";
+        }
 
         return $result;
-
     }
 
-    /**
-     * Get Domain List , deprecated!
-     * @param $test
-     * @return array|bool
-     * @throws SoapFault
-     */
-    public function domains($test = false) {
-        if (!$test)
-            $this->set_credentials();
-        Helper::Load(["User"]);
-
-        $response = $this->api->GetList();
-        if ($response["result"] != "OK") {
-            $this->error = $response["error"]["Message"] . " : " . $response["error"]["Details"];
-            return false;
-        }
-        if ($test)
-            return true;
-
-        $result = [];
-
-        if (isset($response["data"]["Domains"]) && $response["data"]["Domains"]) {
-            foreach ($response["data"]["Domains"] as $res) {
-                $cdate  = isset($res["Dates"]["Start"]) ? DateManager::format("Y-m-d H:i", $res["Dates"]["Start"]) : '';
-                $edate  = isset($res["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i", $res["Dates"]["Expiration"]) : '';
-                $domain = isset($res["DomainName"]) ? $res["DomainName"] : '';
-                if ($domain) {
-                    $order_id    = 0;
-                    $user_data   = [];
-                    $is_imported = Models::$init->db->select("id,owner_id AS user_id")
-                                                    ->from("users_products");
-                    $is_imported->where("type", '=', "domain", "&&");
-                    $is_imported->where("options", 'LIKE', '%"domain":"' . $domain . '"%');
-                    $is_imported = $is_imported->build() ? $is_imported->getAssoc() : false;
-                    if ($is_imported) {
-                        $order_id  = $is_imported["id"];
-                        $user_data = User::getData($is_imported["user_id"], "id,full_name,company_name", "array");
-                    }
-
-                    if ($res["Status"] == "Active")
-                        $result[] = [
-                            'domain'        => $domain,
-                            'creation_date' => $cdate,
-                            'end_date'      => $edate,
-                            'order_id'      => $order_id,
-                            'user_data'     => $user_data,
-                        ];
-                }
-            }
-        }
-        return $result;
-    }
 
     public function domainsdt($pageNumber, $pageLength,$invalidation=0) {
         $this->set_credentials();
@@ -1075,62 +1238,104 @@ class DomainNameAPI {
        if ($invalidation==1){
            $this->invalidateCache(["domainsdt","user_info_short_"]);
        }
+       $cacheKey = "domainsdt_" . $pageNumber . "_" . $pageLength;
 
-        $listParams = [
-            'PageNumber' => $pageNumber,
-            'PageSize'   => $pageLength,
-            'OrderColumn'=>'Id',
-            'OrderDirection'=>'DESC',
-        ];
-
-        $response = $this->rememberCache("domainsdt_" . $pageNumber . "_" . $pageLength, function () use ($listParams) {
-            return $this->api->GetList($listParams);
-        }, 180);
-
-
-
-        if ($response["result"] != "OK") {
-            $this->error = $response["error"]["Message"] . " : " . $response["error"]["Details"];
-            return false;
-        }
-
-        $result    = [
+       $result    = [
             'data'  => [],
             'total' => 0,
         ];
-        $user_data = [];
+        $user_data = $domain_arr = [];
 
-        if (isset($response["data"]["Domains"]) && $response["data"]["Domains"]) {
+        if($this->apiV2){
+            $listParams = [
+                'SkipCount'=> ($pageNumber-1)*$pageLength,
+                'MaxResultCount'=>$pageLength
+            ];
 
-            $result['total'] = $response["TotalCount"];
+            $response = $this->rememberCache($cacheKey,
+                function () use ($listParams) {
+                    return $this->api->getDomainList($listParams);
+            }, 180);
 
-            foreach ($response["data"]["Domains"] as $res) {
-                $user_data[$res["DomainName"]] = [];
+            if ($response["success"] !== true) {
+                $this->error = $response["error"]["code"] . " - " . $response["error"]["message"];
+                return false;
+            }
 
-                $user_data[$res["DomainName"]]['user_info'] = $this->rememberCache("user_info_short_" . $res["DomainName"],
-                    function () use ($res) {
-                        $is_imported = Models::$init->db->select("id,owner_id AS user_id")
-                                                        ->from("users_products");
-                        $is_imported->where("type", '=', "domain", "&&");
-                        $is_imported->where("options", 'LIKE', '%"domain":"' . $res["DomainName"] . '"%');
-                        $is_imported = $is_imported->build() ? $is_imported->getAssoc() : false;
-                        if ($is_imported) {
-                            $user_data= User::getData($is_imported["user_id"], "id,full_name,company_name", "array");
-                            $user_data['order_id']=$is_imported["id"];
-                            return $user_data;
-                        }
-                        return [];
-                    },180);
+            if (isset($response["items"]) && $response["items"]) {
+                $result['total'] = $response["totalCount"];
+                foreach ($response['items'] as $res) {
+                    $domain_arr[] = [
+                        'domain' => $res["domainName"],
+                        'start'  => $res["startDate"],
+                        'end'    => $res["expirationDate"],
+                        'status' => $res["status"]==1 ? "Active" : "Inactive"
+                    ];
+                }
+            }
+
+        }else{
+            $listParams = [
+                'PageNumber'     => $pageNumber,
+                'PageSize'       => $pageLength,
+                'OrderColumn'    => 'Id',
+                'OrderDirection' => 'DESC',
+            ];
+
+            $response = $this->rememberCache($cacheKey,
+                function () use ($listParams) {
+                    return $this->api->GetList($listParams);
+                }, 180);
+
+
+            if ($response["result"] != "OK") {
+                $this->error = $response["error"]["Message"] . " : " . $response["error"]["Details"];
+                return false;
             }
 
 
-            foreach ($response["data"]["Domains"] as $res) {
-                $cdate  = isset($res["Dates"]["Start"]) ? DateManager::format("Y-m-d H:i", $res["Dates"]["Start"]) : '';
-                $edate  = isset($res["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i", $res["Dates"]["Expiration"]) : '';
-                $domain = isset($res["DomainName"]) ? $res["DomainName"] : '';
+            if (isset($response["data"]["Domains"]) && $response["data"]["Domains"]) {
+                $result['total'] = $response["TotalCount"];
+                foreach ($response["data"]["Domains"] as $res) {
+                    $domain_arr[] = [
+                        'domain' => $res["DomainName"],
+                        'start'  => $res["Dates"]["Start"],
+                        'end'    => $res["Dates"]["Expiration"],
+                        'status' => $res["Status"]
+                    ];
+                }
+            }
+        }
+
+        
+
+        foreach ($domain_arr as $res) {
+            $user_data[$res["domain"]] = [];
+
+            $user_data[$res["domain"]]['user_info'] = $this->rememberCache("user_info_short_" . $res["domain"],
+                function () use ($res) {
+                    $is_imported = Models::$init->db->select("id,owner_id AS user_id")
+                                                    ->from("users_products");
+                    $is_imported->where("type", '=', "domain", "&&");
+                    $is_imported->where("options", 'LIKE', '%"domain":"' . $res["domain"] . '"%');
+                    $is_imported = $is_imported->build() ? $is_imported->getAssoc() : false;
+                    if ($is_imported) {
+                        $user_data= User::getData($is_imported["user_id"], "id,full_name,company_name", "array");
+                        $user_data['order_id']=$is_imported["id"];
+                        return $user_data;
+                    }
+                    return [];
+                },180);
+        }
+
+
+        foreach ($domain_arr as $res) {
+                $cdate  = isset($res["start"]) ? DateManager::format("Y-m-d H:i", $res["start"]) : '';
+                $edate  = isset($res["end"]) ? DateManager::format("Y-m-d H:i", $res["end"]) : '';
+                $domain = isset($res["domain"]) ? $res["domain"] : '';
                 if ($domain) {
                     $order_id    = 0;
-                    if ($res["Status"] == "Active")
+                    if ($res["status"] == "Active")
                         $result['data'][] = [
                             'domain'        => $domain,
                             'creation_date' => $cdate,
@@ -1140,7 +1345,7 @@ class DomainNameAPI {
                         ];
                 }
             }
-        }
+        
         return $result;
     }
 
@@ -1157,9 +1362,6 @@ class DomainNameAPI {
         ]);
 
         foreach ($data as $domain => $datum) {
-
-
-
 
             $domain_parse = Utility::domain_parser("http://" . $domain);
             $sld          = $domain_parse["host"];
@@ -1642,6 +1844,189 @@ class DomainNameAPI {
 
         return $response;
     }
+
+
+    private function formatWhois($contacts)
+{
+    $whois = [];
+     $types = ['Registrant', 'Administrative', 'Technical', 'Billing'];
+    if ($this->apiV2) {
+        foreach ($contacts as $contact) {
+            $s_k = strtolower($contact['contactType']);
+            $state = $contact["state"] ?: 'N/A';
+
+            $whois[$s_k] = [
+                'FirstName' => $contact["firstName"],
+                'LastName' => $contact["lastName"],
+                'Name' => $contact["firstName"] . ($contact["lastName"] ? ' ' : '') . $contact["lastName"],
+                'Company' => $contact["companyName"],
+                'EMail' => $contact["eMail"],
+                'AddressLine1' => $contact["address"],
+                'City' => $contact["city"],
+                'State' => $state,
+                'ZipCode' => $contact["postalCode"],
+                'Country' => $contact["country"],
+                'PhoneCountryCode' => $contact["phoneCountryCode"],
+                'Phone' => $contact["phone"],
+                'FaxCountryCode' => $contact["faxCountryCode"] ?? "",
+                'Fax' => $contact["fax"] ?? "",
+            ];
+        }
+    } else {
+
+        foreach ($types as $ct) {
+            $s_k = strtolower($ct);
+            $contact = $contacts[$ct] ?? $contacts["Registrant"];
+            $state = $contact["Address"]["State"] ?: 'N/A';
+            $whois[$s_k] = [
+                'FirstName' => $contact["FirstName"],
+                'LastName' => $contact["LastName"],
+                'Name' => $contact["FirstName"] . ($contact["LastName"] ? ' ' : '') . $contact["LastName"],
+                'Company' => $contact["Company"],
+                'EMail' => $contact["EMail"],
+                'AddressLine1' => $contact["Address"]["Line1"],
+                'City' => $contact["Address"]["City"],
+                'State' => $state,
+                'ZipCode' => $contact["Address"]["ZipCode"],
+                'Country' => $contact["Address"]["Country"],
+                'PhoneCountryCode' => $contact["Phone"]["Phone"]["CountryCode"],
+                'Phone' => $contact["Phone"]["Phone"]["Number"],
+                'FaxCountryCode' => $contact["Phone"]["Fax"]["CountryCode"] ?? "",
+                'Fax' => $contact["Phone"]["Fax"]["Number"] ?? "",
+            ];
+        }
+    }
+    return $whois;
+}
+
+    public function contactProcess($data = [], $type = 'Contact')
+    {
+        $this->set_credentials();
+
+        $formatWhoisData = function ($v) {
+            $firstname   = $v["FirstName"] ?? $v["firstName"] ?? $v["firstname"];
+            $lastname    = $v["LastName"] ?? $v["lastName"] ?? $v["lastname"];
+            $companyname = $v["Company"] ?? $v["company"] ?? $v["companyname"];
+            $email       = $v["Email"] ?? $v["email"];
+            $address1    = $v["AddressLine1"] ?? $v["addressLine1"] ?? $v["address1"];
+            $address2    = $v["AddressLine2"] ?? $v["addressLine2"] ?? $v["address2"];
+            $city        = $v["City"] ?? $v["city"];
+            $country     = $v["Country"] ?? $v["country"] ?? $v["countrycode"];
+            $fax         = $v["Fax"] ?? $v["fax"] ?? $v["phonenumber"];
+            $faxcc       = $v["FaxCountryCode"] ?? $v["faxCountryCode"] ?? $v["phonecc"];
+            $phonecc     = $v["PhoneCountryCode"] ?? $v["phoneCountryCode"] ?? $v["phonecc"];
+            $phone       = $v["Phone"] ?? $v["phone"] ?? $v["phonenumber"];
+            $postcode    = $v["ZipCode"] ?? $v["zipCode"] ?? $v["postcode"];
+            $state       = $v["State"] ?? $v["state"];
+
+            if ($this->apiV2) {
+                // Yeni API için anahtar adlarını kullan
+                $whois_arr = [
+                    "firstName"        => $firstname,
+                    "lastName"         => $lastname,
+                    "companyName"      => $companyname,
+                    "eMail"            => $email,
+                    "address"          => $address1 . " " . $address2, // Adresleri birleştir
+                    "state"            => $state,
+                    "city"             => $city,
+                    "country"          => $country,
+                    "fax"              => $fax,
+                    "faxCountryCode"   => $faxcc,
+                    "phone"            => $phone,
+                    "phoneCountryCode" => $phonecc,
+                    "postalCode"       => $postcode,
+                ];
+            } else {
+                // Eski API için anahtar adlarını kullan
+                $whois_arr = [
+                    "FirstName"        => $firstname,
+                    "LastName"         => $lastname,
+                    "Company"          => $companyname,
+                    "EMail"            => $email,
+                    "AddressLine1"     => $address1,
+                    "AddressLine2"     => $address2,
+                    "State"            => $state,
+                    "City"             => $city,
+                    "Country"          => $country,
+                    "Fax"              => $fax,
+                    "FaxCountryCode"   => $faxcc,
+                    "Phone"            => $phone,
+                    "PhoneCountryCode" => $phonecc,
+                    "ZipCode"          => $postcode,
+                ];
+                if (isset($params['FirstName'])) {
+                    $whois_arr['Status'] = ""; // Eğer FirstName parametresi varsa, Status ekleyin
+                }
+            }
+
+            if (strlen(trim($whois_arr["LastName"])) == 0) {
+                $whois_arr["LastName"] = $whois_arr["FirstName"];
+            }
+
+            return $whois_arr;
+        };
+
+        if (isset($data["registrant"])) {
+            $whois_data = [];
+            foreach ($data as $k => $v) {
+                $whois_data[ucfirst($k)] = $formatWhoisData($v);
+            }
+            return $whois_data;
+        } else {
+            $whois_data = $formatWhoisData($data);
+            return [
+                "Administrative" => $whois_data,
+                "Billing"        => $whois_data,
+                "Technical"      => $whois_data,
+                "Registrant"     => $whois_data,
+            ];
+        }
+    }
+
+    public function addionalFieldsProcess($domain, $whois, $userInfo)
+    {
+        $additional = [];
+
+        if (substr($domain, -3) == ".tr") {
+            $additional['TRABISDOMAINCATEGORY'] = $whois['Registrant']['Company'] ? 0 : 1;
+            $additional['TRABISCOUNTRYID']      = $whois['Registrant']['Country'] == "TR" ? 215 : 888;
+            $additional['TRABISCOUNTRYNAME']    = $whois['Registrant']['Country'];
+            $additional['TRABISCITYNAME']       = $whois['Registrant']['City'];
+            $additional['TRABISCITIYID']        = 888;
+
+
+            $identity     = "11111111111";
+            $name_surname = $whois["Registrant"]['FirstName'] . ' ' . $whois["Registrant"]['LastName'];
+            $tax_number   = '1111111111';
+            $tax_office   = 'Bilinmiyor';
+
+
+            if ($userInfo) {
+                if ($userInfo['identity']) {
+                    $identity = $userInfo['identity'];
+                }
+                if ($userInfo["company_tax_office"]) {
+                    $tax_office = $userInfo["company_tax_office"];
+                }
+                if ($userInfo["company_tax_number"]) {
+                    $tax_number = $userInfo["company_tax_number"];
+                }
+            }
+
+            if ($whois['Registrant']['Company']) {
+                $additional['TRABISORGANIZATION'] = $whois["Registrant"]["Company"];
+                $additional['TRABISTAXOFFICE']    = $tax_office;
+                $additional['TRABISTAXNUMBER']    = $tax_number;
+            } else {
+                $additional['TRABISCITIZIENID']  = $identity;
+                $additional['TRABISNAMESURNAME'] = $name_surname;
+            }
+        }
+
+        return $additional;
+    }
+
+
 
 
     public function rememberCache($key, $function, $ttl = 3600)
