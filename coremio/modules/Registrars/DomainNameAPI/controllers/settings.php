@@ -48,8 +48,8 @@ if ($test_mode !== false && (int)$test_mode != $config["settings"]["test-mode"])
     $sets["settings"]["test-mode"] = (int)$test_mode;
 }
 
-if ($adp !== false && (!isset($config["settings"]["adp"]) || (bool)(int)$adp != $config["settings"]["adp"])) {
-    $sets["settings"]["adp"] = (bool)(int)$adp;
+if ($adp != $config["settings"]["adp"]) {
+    $sets["settings"]["adp"] = (bool)$adp==1;
 }
 
 if ($cost_cid !== false && (!isset($config["settings"]["cost-currency"]) || (int)$cost_cid != $config["settings"]["cost-currency"])) {
