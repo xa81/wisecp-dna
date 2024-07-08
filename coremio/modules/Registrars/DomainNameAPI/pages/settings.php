@@ -57,7 +57,7 @@ $soap_exists = class_exists("SoapClient");
             <div class="formcon" style="display: none">
                 <div class="yuzde30"><?php echo $LANG["fields"]["resellerid"]; ?></div>
                 <div class="yuzde70">
-                    <input type="text" name="username" value="<?php echo $CONFIG["settings"]["resellerid"]; ?>">
+                    <input type="text" name="resellerid" value="<?php echo $CONFIG["settings"]["resellerid"]; ?>">
                 </div>
             </div>
 
