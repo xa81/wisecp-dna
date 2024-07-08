@@ -25,6 +25,7 @@ $test_mode      = Filter::POST("test-mode", "numbers");
 $adp            = Filter::POST("adp", "numbers");
 $cost_cid       = Filter::POST("cost-currency", "numbers");
 $exclude = Filter::POST("exclude", "hclear");
+$api_version = Filter::POST("api-version", "hclear");
 
 $sets = [];
 
@@ -50,6 +51,10 @@ if ($test_mode !== false && (int)$test_mode != $config["settings"]["test-mode"])
 
 if ($adp != $config["settings"]["adp"]) {
     $sets["settings"]["adp"] = (bool)$adp==1;
+}
+
+if ($api_version != $config["settings"]["api-version"]) {
+    $sets["settings"]["api-version"] = (bool)$api_version==1;
 }
 
 if ($cost_cid !== false && (!isset($config["settings"]["cost-currency"]) || (int)$cost_cid != $config["settings"]["cost-currency"])) {

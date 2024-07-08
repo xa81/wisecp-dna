@@ -12,6 +12,8 @@ return [
         'privacyFee' => "WhoIS-Schutzgeb\xc3\xbchr",
         'adp'        => 'Preise automatisch aktualisieren',
         'importTld'  => 'Erweiterungen importieren',
+        'api-v2'     => "Verwende die neue Version",
+        'resellerid' => "Wiederverkäufer-ID",
     ],
     'desc'                 => [
         'privacyFee'  => "<br> Fordern Sie eine Geb\xc3\xbchr f\xc3\xbcr den whois-Schutzdienst an.",

@@ -12,6 +12,8 @@ return [
         'privacyFee' => 'Whois Protection Fee',
         'adp'        => 'Prijzen automatisch bijwerken',
         'importTld'  => 'Importeer extensies',
+        'api-v2'     => "Gebruik de nieuwe versie",
+        'resellerid' => "Reseller ID",
     ],
     'desc'                 => [
         'privacyFee'  => "<br> Vraag om een \xe2\x80\x8b\xe2\x80\x8bvergoeding voor de WHOIS -beschermingsdienst.",

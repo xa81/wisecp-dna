@@ -13,6 +13,8 @@ return [
         'adp'           => 'Update pricing automatically',
         'importTld'     => 'Import Extensions',
         'cost-currency' => 'Cost Currency',
+        'api-v2'        => "Use the new version",
+        'resellerid'    => "Reseller ID",
     ],
     'desc'                 => [
         'privacyFee'    => '<br>Ask for a fee for whois protection service.',

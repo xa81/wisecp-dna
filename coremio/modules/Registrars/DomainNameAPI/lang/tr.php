@@ -13,6 +13,8 @@ return [
         'adp'           => "Maliyetleri Oto Güncelle",
         'importTld'     => "Uzantıları İçeri Aktar",
         'cost-currency' => "Maliyet Para Birimi",
+        'api-v2'        => "Yeni versiyonu kullan",
+        'resellerid'    => "Reseller ID",
     ],
     'desc'                 => [
         'privacyFee'    => "<br>Müşterilerinizden whois bilgisi gizlemek için ücret talep edebilirsiniz.",

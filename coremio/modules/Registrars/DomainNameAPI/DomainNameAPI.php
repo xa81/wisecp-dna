@@ -129,25 +129,37 @@ class DomainNameAPI {
 
         $response = $this->rememberCache("domain_query_".md5(json_encode([$sld, $tlds])),function () use ($sld, $tlds){
             return $this->api->CheckAvailability([$sld], $tlds, 1, "create");
-        },60);
+        },600);
 
         $result = [];
-        foreach ($response as $domain) {
-            if(isset($domain['tld'])){
-               $result[$domain["TLD"]] = [
-                'status' => $domain["Status"] == "available" ? "available" : "unavailable",
-            ];
-            if (isset($domain["ClassKey"]) && $domain["ClassKey"] == "premium") {
-                $result[$domain["TLD"]]['premium']       = true;
-                $result[$domain["TLD"]]['premium_price'] = [
-                    'amount'   => number_format($domain["Price"], 2, '.', ''),
-                    'currency' => $domain["Currency"],
+
+        if (is_array($tlds) && count($tlds)) {
+            foreach ($tlds as $tld) {
+                $result[$tld] = [
+                    'status'  => "error",
+                    'message' => "something went wrong"
                 ];
             }
-            }
-
         }
+
+        foreach ($response as $domain) {
+            if (isset($domain['TLD'])) {
+                $tld                    = $domain["TLD"];
+                $result[$tld]['status'] = $domain["Status"] == "available" ? "available" : "unavailable";
+                unset($result[$tld]['message']);
+
+                if (isset($domain["ClassKey"]) && $domain["ClassKey"] == "premium") {
+                    $result[$tld]['premium']       = true;
+                    $result[$tld]['premium_price'] = [
+                        'amount'   => number_format($domain["Price"], 2, '.', ''),
+                        'currency' => $domain["Currency"],
+                    ];
+                }
+            }
+        }
+
         return $result;
+
     }
 
 

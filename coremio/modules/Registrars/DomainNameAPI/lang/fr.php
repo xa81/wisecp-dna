@@ -12,6 +12,8 @@ return [
         'privacyFee' => 'WhoIS Protection Fee',
         'adp'        => 'Update pricing automatically',
         'importTld'  => 'Import Extensions',
+        'api-v2'     => "Utilisez la nouvelle version",
+        'resellerid' => "ID du revendeur",
     ],
     'desc'                 => [
         'privacyFee'  => '<br>Ask for a fee for whois protection service.',

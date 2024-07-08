@@ -54,6 +54,23 @@ $soap_exists = class_exists("SoapClient");
                 </div>
             </div>
 
+            <div class="formcon" style="display: none">
+                <div class="yuzde30"><?php echo $LANG["fields"]["resellerid"]; ?></div>
+                <div class="yuzde70">
+                    <input type="text" name="username" value="<?php echo $CONFIG["settings"]["resellerid"]; ?>">
+                </div>
+            </div>
+
+            <div class="formcon" style="display: none">
+                <div class="yuzde30"><?php echo $LANG["fields"]["api-v2"]; ?></div>
+                <div class="yuzde70">
+                    <input<?php echo isset($CONFIG["settings"]["api-version"]) && $CONFIG["settings"]["api-version"] ? ' checked' : ''; ?> type="checkbox" name="api-version" value="1" id="DomainNameAPI_apiv2" class="checkbox-custom">
+                    <label class="checkbox-custom-label" for="DomainNameAPI_adp">
+                        <span class="kinfo"><?php echo $LANG["desc"]["api-v2"]; ?></span>
+                    </label>
+                </div>
+            </div>
+
             <div class="formcon">
                 <div class="yuzde30"><?php echo $LANG["fields"]["privacyFee"]; ?></div>
                 <div class="yuzde70">
