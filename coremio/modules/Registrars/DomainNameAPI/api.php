@@ -10,7 +10,7 @@
 /**
  * Class DomainNameAPI_PHPLibrary
  * @package DomainNameApi
- * @version 2.0.13
+ * @version 2.0.14
  */
 
 /*
@@ -25,7 +25,7 @@ class DomainNameAPI_PHPLibrary
     /**
      * Version of the library
      */
-    const VERSION = '2.0.13';
+    const VERSION = '2.0.14';
 
     /**
      * Error reporting enabled
@@ -168,6 +168,16 @@ class DomainNameAPI_PHPLibrary
             return;
         }
 
+        $skipped_errors = [
+            'Domain not found'
+        ];
+
+        foreach ($skipped_errors as $ek => $ev) {
+            if(strpos($e->getMessage(),$ev) !== false){
+                return ;
+            }
+        }
+
         $elapsed_time = microtime(true) - $this->startAt;
         $parsed_dsn = parse_url($this->errorReportingDsn);
 
@@ -242,8 +252,25 @@ class DomainNameAPI_PHPLibrary
         }
         $sentry_auth_header = 'X-Sentry-Auth: Sentry ' . implode(', ', $sentry_auth);
 
-        $cmd = 'curl -X POST ' . escapeshellarg($api_url) . ' -H ' . escapeshellarg('Content-Type: application/json') . ' -H ' . escapeshellarg($sentry_auth_header) . ' -d ' . escapeshellarg(json_encode($errorData)) . ' > /dev/null 2>&1 &';
-        exec($cmd);
+        if(function_exists('escapeshellarg') && function_exists('exec')){
+            $cmd = 'curl -X POST ' . escapeshellarg($api_url) . ' -H ' . escapeshellarg('Content-Type: application/json') . ' -H ' . escapeshellarg($sentry_auth_header) . ' -d ' . escapeshellarg(json_encode($errorData)) . ' > /dev/null 2>&1 &';
+            exec($cmd);
+        }else{
+             $jsonData = json_encode($errorData);
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $api_url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'Content-Type: application/json',
+                    $sentry_auth_header
+                ]);
+                curl_exec($ch);
+                curl_close($ch);
+        }
     }
 
     private function getServerIp()
