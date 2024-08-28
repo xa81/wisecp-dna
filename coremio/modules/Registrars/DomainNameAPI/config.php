@@ -2,7 +2,7 @@
 return [
     'meta'     => [
         'name'    => 'DomainNameAPI',
-        'version' => '1.0',
+        'version' => '1.8',
         'logo'    => 'logo.png',
     ],
     'settings' => [
@@ -14,5 +14,6 @@ return [
         'whidden-currency' => 4,
         'cost-currency'    => 4,
         'adp'              => true,
+        'exclude'=>''
     ],
 ];
