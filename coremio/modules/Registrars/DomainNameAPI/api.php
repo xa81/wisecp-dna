@@ -10,7 +10,7 @@
 /**
  * Class DomainNameAPI_PHPLibrary
  * @package DomainNameApi
- * @version 2.0.13
+ * @version 2.0.14
  */
 
 /*
@@ -25,7 +25,7 @@ class DomainNameAPI_PHPLibrary
     /**
      * Version of the library
      */
-    const VERSION = '2.0.13';
+    const VERSION = '2.0.14';
 
     /**
      * Error reporting enabled
@@ -37,6 +37,7 @@ class DomainNameAPI_PHPLibrary
      * @var string $errorReportingDsn
      */
     private $errorReportingDsn = 'https://d4e2d61e4af2d4c68fb21ab93bf51ff2@o4507492369039360.ingest.de.sentry.io/4507492373954640';
+
 
     /**
      * Api Username
@@ -79,11 +80,13 @@ class DomainNameAPI_PHPLibrary
 
         try {
             // Create unique connection
+
             $this->service = new \SoapClient($this->serviceUrl . "?singlewsdl", [
                 "encoding"           => "UTF-8",
                 'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
                 'exceptions'         => true,
                 'connection_timeout' => 20,
+ 
             ]);
         } catch (\SoapFault $e) {
             $this->sendErrorToSentryAsync($e);
@@ -168,6 +171,17 @@ class DomainNameAPI_PHPLibrary
             return;
         }
 
+        $skipped_errors = [
+            'Domain not found',
+            'ERR_DOMAIN_NOT_FOUND'
+        ];
+
+        foreach ($skipped_errors as $ek => $ev) {
+            if(strpos($e->getMessage(),$ev) !== false){
+                return ;
+            }
+        }
+
         $elapsed_time = microtime(true) - $this->startAt;
         $parsed_dsn = parse_url($this->errorReportingDsn);
 
@@ -242,8 +256,25 @@ class DomainNameAPI_PHPLibrary
         }
         $sentry_auth_header = 'X-Sentry-Auth: Sentry ' . implode(', ', $sentry_auth);
 
-        $cmd = 'curl -X POST ' . escapeshellarg($api_url) . ' -H ' . escapeshellarg('Content-Type: application/json') . ' -H ' . escapeshellarg($sentry_auth_header) . ' -d ' . escapeshellarg(json_encode($errorData)) . ' > /dev/null 2>&1 &';
-        exec($cmd);
+        if(function_exists('escapeshellarg') && function_exists('exec')){
+            $cmd = 'curl -X POST ' . escapeshellarg($api_url) . ' -H ' . escapeshellarg('Content-Type: application/json') . ' -H ' . escapeshellarg($sentry_auth_header) . ' -d ' . escapeshellarg(json_encode($errorData)) . ' > /dev/null 2>&1 &';
+            exec($cmd);
+        }else{
+             $jsonData = json_encode($errorData);
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $api_url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'Content-Type: application/json',
+                    $sentry_auth_header
+                ]);
+                curl_exec($ch);
+                curl_close($ch);
+        }
     }
 
     private function getServerIp()
@@ -1754,6 +1785,7 @@ class DomainNameAPI_PHPLibrary
             'result' => 'ERROR',
             'error'  => 'Unknown Error Occured'
         ];
+ 
 
         try {
             // SOAP method which is same as current function name called

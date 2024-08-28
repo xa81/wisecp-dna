@@ -31,6 +31,7 @@ class DomainNameAPI {
             return false;
         }
 
+
         if (!class_exists("\DomainNameApi\DomainNameAPI_PHPLibrary")) {
             include __DIR__ . DS . "api.php";
         }
@@ -127,9 +128,11 @@ class DomainNameAPI {
             return false;
         }
 
+ 
         $response = $this->rememberCache("domain_query_".md5(json_encode([$sld, $tlds])),function () use ($sld, $tlds){
             return $this->api->CheckAvailability([$sld], $tlds, 1, "create");
         },600);
+
 
         $result = [];
 
@@ -1647,6 +1650,7 @@ class DomainNameAPI {
     public function getDNAUser()
     {
         $this->set_credentials();
+ 
 
         $response =$this->rememberCache("dna_user", function () {
             return $this->api->GetResellerDetails();
