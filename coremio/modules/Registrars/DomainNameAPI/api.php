@@ -169,7 +169,8 @@ class DomainNameAPI_PHPLibrary
         }
 
         $skipped_errors = [
-            'Domain not found'
+            'Domain not found',
+            'ERR_DOMAIN_NOT_FOUND'
         ];
 
         foreach ($skipped_errors as $ek => $ev) {
