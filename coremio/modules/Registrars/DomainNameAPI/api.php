@@ -10,7 +10,7 @@
 /**
  * Class DomainNameAPI_PHPLibrary
  * @package DomainNameApi
- * @version 2.0.14
+ * @version 2.0.19
  */
 
 /*
@@ -25,7 +25,7 @@ class DomainNameAPI_PHPLibrary
     /**
      * Version of the library
      */
-    const VERSION = '2.0.14';
+    const VERSION = '2.0.19';
 
     /**
      * Error reporting enabled
@@ -37,7 +37,6 @@ class DomainNameAPI_PHPLibrary
      * @var string $errorReportingDsn
      */
     private $errorReportingDsn = 'https://d4e2d61e4af2d4c68fb21ab93bf51ff2@o4507492369039360.ingest.de.sentry.io/4507492373954640';
-
 
     /**
      * Api Username
@@ -80,13 +79,11 @@ class DomainNameAPI_PHPLibrary
 
         try {
             // Create unique connection
-
             $this->service = new \SoapClient($this->serviceUrl . "?singlewsdl", [
                 "encoding"           => "UTF-8",
                 'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
                 'exceptions'         => true,
                 'connection_timeout' => 20,
- 
             ]);
         } catch (\SoapFault $e) {
             $this->sendErrorToSentryAsync($e);
@@ -248,7 +245,7 @@ class DomainNameAPI_PHPLibrary
         // Sentry başlığı
         $sentry_auth = [
             'sentry_version=7',
-            'sentry_client=dnalib-php/' . self::VERSION,
+            'sentry_client=wisecp-php/' . self::VERSION,
             "sentry_key=$public_key"
         ];
         if ($secret_key) {
@@ -1785,15 +1782,11 @@ class DomainNameAPI_PHPLibrary
             'result' => 'ERROR',
             'error'  => 'Unknown Error Occured'
         ];
- 
 
         try {
             // SOAP method which is same as current function name called
-            $_response_raw = $_response = $this->service->__soapCall($fn, [$parameters]);
-
-            $_response_raw = $this->service->__getLastResponse();
-
-
+            $_response = $this->service->__soapCall($fn, [$parameters]);
+            $this->service->__getLastResponse();
             // Serialize as array
             $_response = $this->objectToArray($_response);
 
