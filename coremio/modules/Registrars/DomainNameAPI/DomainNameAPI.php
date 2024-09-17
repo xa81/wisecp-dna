@@ -873,20 +873,22 @@ class DomainNameAPI {
             return false;
         }
 
-        $endtime       = isset($OrderDetails["data"]["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i:s", $OrderDetails["data"]["Dates"]["Expiration"]) : false;
-        $currentstatus = isset($OrderDetails["data"]["Status"]) ? $OrderDetails["data"]["Status"] : false;
+        $endtime       = isset($OrderDetails["data"]["Dates"]["Expiration"]) ? DateManager::format("Y-m-d", $OrderDetails["data"]["Dates"]["Expiration"]) : false;
+        $currentstatus = $OrderDetails["data"]["Status"] ?? false;
 
         $return_data = [
-            'status' => 'waiting',
+            'status' => 'unknown',
         ];
 
-        if ($endtime)
+        if ($endtime) {
             $return_data["endtime"] = $endtime;
+        }
 
         if ($currentstatus == "Active") {
             $return_data["status"] = "active";
-        } elseif ($currentstatus == "Expired")
+        } elseif ($currentstatus == "Expired") {
             $return_data["status"] = "expired";
+        }
 
         return $return_data;
     }
@@ -900,11 +902,11 @@ class DomainNameAPI {
             return false;
         }
 
-        $endtime       = isset($OrderDetails["data"]["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i:s", $OrderDetails["data"]["Dates"]["Expiration"]) : false;
-        $currentstatus = isset($OrderDetails["data"]["Status"]) ? $OrderDetails["data"]["Status"] : false;
+        $endtime       = isset($OrderDetails["data"]["Dates"]["Expiration"]) ? DateManager::format("Y-m-d", $OrderDetails["data"]["Dates"]["Expiration"]) : false;
+        $currentstatus = $OrderDetails["data"]["Status"] ?? false;
 
         $return_data = [
-            'status' => 'waiting',
+            'status' => 'unknown',
         ];
 
         if ($endtime)
@@ -913,22 +915,27 @@ class DomainNameAPI {
         if ($currentstatus == "Active") {
             $dns = [];
 
-            if (isset($params["ns1"]) && $params["ns1"])
+            if (isset($params["ns1"]) && $params["ns1"]) {
                 $dns[] = $params["ns1"];
-            if (isset($params["ns2"]) && $params["ns2"])
+            }
+            if (isset($params["ns2"]) && $params["ns2"]) {
                 $dns[] = $params["ns2"];
-            if (isset($params["ns3"]) && $params["ns3"])
+            }
+            if (isset($params["ns3"]) && $params["ns3"]) {
                 $dns[] = $params["ns3"];
-            if (isset($params["ns4"]) && $params["ns4"])
+            }
+            if (isset($params["ns4"]) && $params["ns4"]) {
                 $dns[] = $params["ns4"];
+            }
 
             $this->ModifyDns(['domain' => $domain], $dns);
             $this->ModifyWhois(['domain' => $domain], $params["whois"]);
 
 
             $return_data["status"] = "active";
-        } elseif ($currentstatus == "Expired")
+        } elseif ($currentstatus == "Expired") {
             $return_data["status"] = "expired";
+        }
 
         return $return_data;
     }
@@ -1000,8 +1007,8 @@ class DomainNameAPI {
                     'Country'          => $w_data["Address"]["Country"],
                     'PhoneCountryCode' => $w_data["Phone"]["Phone"]["CountryCode"],
                     'Phone'            => $w_data["Phone"]["Phone"]["Number"],
-                    'FaxCountryCode'   => isset($w_data["Phone"]["Fax"]["CountryCode"]) ? $w_data["Phone"]["Fax"]["CountryCode"] : "",
-                    'Fax'              => isset($w_data["Phone"]["Fax"]["Number"]) ? $w_data["Phone"]["Fax"]["Number"] : "",
+                    'FaxCountryCode'   => $w_data["Phone"]["Fax"]["CountryCode"] ?? "",
+                    'Fax'              => $w_data["Phone"]["Fax"]["Number"] ?? "",
                 ];
             }
         }
@@ -1055,7 +1062,7 @@ class DomainNameAPI {
             foreach ($response["data"]["Domains"] as $res) {
                 $cdate  = isset($res["Dates"]["Start"]) ? DateManager::format("Y-m-d H:i", $res["Dates"]["Start"]) : '';
                 $edate  = isset($res["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i", $res["Dates"]["Expiration"]) : '';
-                $domain = isset($res["DomainName"]) ? $res["DomainName"] : '';
+                $domain = $res["DomainName"] ?? '';
                 if ($domain) {
                     $order_id    = 0;
                     $user_data   = [];
@@ -1103,7 +1110,6 @@ class DomainNameAPI {
         }, 180);
 
 
-
         if ($response["result"] != "OK") {
             $this->error = $response["error"]["Message"] . " : " . $response["error"]["Details"];
             return false;
@@ -1142,7 +1148,7 @@ class DomainNameAPI {
             foreach ($response["data"]["Domains"] as $res) {
                 $cdate  = isset($res["Dates"]["Start"]) ? DateManager::format("Y-m-d H:i", $res["Dates"]["Start"]) : '';
                 $edate  = isset($res["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i", $res["Dates"]["Expiration"]) : '';
-                $domain = isset($res["DomainName"]) ? $res["DomainName"] : '';
+                $domain = $res["DomainName"] ?? '';
                 if ($domain) {
                     $order_id    = 0;
                     if ($res["Status"] == "Active")
@@ -1172,9 +1178,6 @@ class DomainNameAPI {
         ]);
 
         foreach ($data as $domain => $datum) {
-
-
-
 
             $domain_parse = Utility::domain_parser("http://" . $domain);
             $sld          = $domain_parse["host"];
@@ -1223,8 +1226,8 @@ class DomainNameAPI {
                 "dns_manage"       => true,
                 "whois_manage"     => true,
                 "transferlock"     => $info["transferlock"],
-                "cns_list"         => isset($info["cns"]) ? $info["cns"] : [],
-                "whois"            => isset($info["whois"]) ? $info["whois"] : [],
+                "cns_list"         => $info["cns"] ?? [],
+                "whois"            => $info["whois"] ?? [],
             ];
 
             if (isset($info["whois_privacy"]) && $info["whois_privacy"]) {
@@ -1236,14 +1239,18 @@ class DomainNameAPI {
                 }
             }
 
-            if (isset($info["ns1"]) && $info["ns1"])
+            if (isset($info["ns1"]) && $info["ns1"]) {
                 $options["ns1"] = $info["ns1"];
-            if (isset($info["ns2"]) && $info["ns2"])
+            }
+            if (isset($info["ns2"]) && $info["ns2"]) {
                 $options["ns2"] = $info["ns2"];
-            if (isset($info["ns3"]) && $info["ns3"])
+            }
+            if (isset($info["ns3"]) && $info["ns3"]) {
                 $options["ns3"] = $info["ns3"];
-            if (isset($info["ns4"]) && $info["ns4"])
+            }
+            if (isset($info["ns4"]) && $info["ns4"]) {
                 $options["ns4"] = $info["ns4"];
+            }
 
 
             $order_data = [
@@ -1271,32 +1278,6 @@ class DomainNameAPI {
                 continue;
             }
 
-            /*
-             * Possiblity slow down the system
-            if (isset($options["whois_privacy"])) {
-                $amount = Money::exChange($this->whidden["amount"], $this->whidden["currency"], $productPrice_cid);
-                $start  = DateManager::Now();
-                $end    = isset($wprivacy_endtime) ? $wprivacy_endtime : DateManager::ata();
-                Orders::insert_addon([
-                    'invoice_id'  => 0,
-                    'owner_id'    => $insert,
-                    "addon_key"   => "whois-privacy",
-                    'addon_id'    => 0,
-                    'addon_name'  => Bootstrap::$lang->get_cm("website/account_products/whois-privacy", false, $ulang),
-                    'option_id'   => 0,
-                    "option_name" => Bootstrap::$lang->get("needs/iwwant", $ulang),
-                    'period'      => 1,
-                    'period_time' => "year",
-                    'status'      => "active",
-                    'cdate'       => $start,
-                    'renewaldate' => $start,
-                    'duedate'     => $end,
-                    'amount'      => $amount,
-                    'cid'         => $productPrice_cid,
-                    'unread'      => 1,
-                ]);
-            }
-            */
             $imports[] = $order_data["name"] . " (#" . $insert . ")";
         }
 
@@ -1650,7 +1631,6 @@ class DomainNameAPI {
     public function getDNAUser()
     {
         $this->set_credentials();
- 
 
         $response =$this->rememberCache("dna_user", function () {
             return $this->api->GetResellerDetails();
@@ -1664,7 +1644,6 @@ class DomainNameAPI {
     {
         // Güvenli bir hash algoritması kullanın
         $cache_key = "DNA-" . substr($key, 0, 10) . '_' . hash('sha256', $this->username . $this->password . '-' . $key);
-
 
         $cache_object = Models::$init->db->select("name,content,updated_at")
                                          ->from("mod_dna_cache_elements")

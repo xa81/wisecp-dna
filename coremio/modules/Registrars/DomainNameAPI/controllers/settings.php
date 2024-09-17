@@ -2,6 +2,7 @@
 if (!defined("CORE_FOLDER")) {
     die();
 }
+/** @var $module DomainNameAPI */
 
 $lang           = $module->lang;
 $config         = $module->config;
@@ -24,8 +25,8 @@ $whidden_curr   = Filter::POST("whidden-currency", "numbers");
 $test_mode      = Filter::POST("test-mode", "numbers");
 $adp            = Filter::POST("adp", "numbers");
 $cost_cid       = Filter::POST("cost-currency", "numbers");
-$exclude = Filter::POST("exclude", "hclear");
-$api_version = Filter::POST("api-version", "hclear");
+$exclude        = Filter::POST("exclude", "hclear");
+$api_version    = Filter::POST("api-version", "hclear");
 
 $sets = [];
 

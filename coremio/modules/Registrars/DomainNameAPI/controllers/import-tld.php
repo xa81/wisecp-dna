@@ -1,6 +1,12 @@
 <?php
-if (!Filter::isPOST())
+if (!defined("CORE_FOLDER")) {
+    die();
+}
+if (!Filter::isPOST()) {
     return false;
+}
+/** @var $module DomainNameAPI */
+
 $LANG  = $module->lang;
 
 $onlytlds = Filter::POST("onlytlds");

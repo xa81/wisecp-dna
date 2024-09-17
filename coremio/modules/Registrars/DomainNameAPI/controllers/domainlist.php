@@ -1,8 +1,9 @@
 <?php
-
 if (!defined("CORE_FOLDER")) {
     die();
 }
+/** @var $module DomainNameAPI */
+
 $lang = $module->lang;
 //datatable post fields
 
