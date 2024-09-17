@@ -1,8 +1,8 @@
 <?php
-
 if (!defined("CORE_FOLDER")) {
     die();
 }
+/** @var $module DomainNameAPI */
 
 $lang = $module->lang;
 $data = Filter::POST("data");

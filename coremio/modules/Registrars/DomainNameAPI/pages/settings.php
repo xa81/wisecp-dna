@@ -620,7 +620,6 @@ $soap_exists = class_exists("SoapClient");
 
   }
 
-
   $(document).ready(function() {
 
     setTimeout(function() {
@@ -1000,14 +999,9 @@ $soap_exists = class_exists("SoapClient");
     }
   }
 
-
-
-
-
 </script>
 
 <style>
-    /* HTML: <div class="loader"></div> */
     .loader {
       width: 20px;
       aspect-ratio: 1;

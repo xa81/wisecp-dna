@@ -1,10 +1,10 @@
 <?php
-
 if (!defined("CORE_FOLDER")) {
     die();
 }
+/** @var $module DomainNameAPI */
+
 $lang = $module->lang;
-//datatable post fields
 
 $draw   = (int)Filter::POST("draw");
 $start  = (int)Filter::POST("start");

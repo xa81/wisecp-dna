@@ -1,8 +1,8 @@
 <?php
-
 if (!defined("CORE_FOLDER")) {
     die();
 }
+/** @var $module DomainNameAPI */
 
 $lang    = $module->lang;
 $config  = $module->config;
@@ -33,7 +33,6 @@ if ($username != $config["settings"]["username"]) {
 if ($password != "*****" && $password != $config["settings"]["password"]) {
     $sets["settings"]["password"] = $password;
 }
-
 
 if ($whidden_amount != $config["settings"]["whidden-amount"]) {
     $sets["settings"]["whidden-amount"] = $whidden_amount;
