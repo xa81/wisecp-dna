@@ -1090,7 +1090,7 @@ class DomainNameAPI {
         return $result;
     }
 
-    public function domainsdt($pageNumber, $pageLength,$invalidation=0) {
+    public function domainsdt($pageNumber, $pageLength,$search,$invalidation=0) {
         $this->set_credentials();
         Helper::Load(["User"]);
 
@@ -1105,7 +1105,11 @@ class DomainNameAPI {
             'OrderDirection'=>'DESC',
         ];
 
-        $response = $this->rememberCache("domainsdt_" . $pageNumber . "_" . $pageLength, function () use ($listParams) {
+        if(strlen($search)>1){
+            $listParams['DomainName']=$search;
+        }
+
+        $response = $this->rememberCache("domainsdt_" . $pageNumber . "_" . $pageLength.'_'.md5($search), function () use ($listParams) {
             return $this->api->GetList($listParams);
         }, 180);
 
