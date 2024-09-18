@@ -11,11 +11,12 @@ $draw   = (int)Filter::POST("draw");
 $start  = (int)Filter::POST("start");
 $length = (int)Filter::POST("length");
 $invalidation = (int)Filter::POST("invalidate");
+$search = Filter::POST("search")['value'];
 
 $pageLength = $length;
 $pageNumber = $start / $pageLength;
 
-$domains = $module->domainsdt($pageNumber, $pageLength, $invalidation);
+$domains = $module->domainsdt($pageNumber, $pageLength,$search, $invalidation);
 
 echo Utility::jencode([
     'draw'            => $draw,
