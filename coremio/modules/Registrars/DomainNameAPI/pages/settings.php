@@ -131,7 +131,7 @@ $soap_exists = class_exists("SoapClient");
 
 
             <div class="formcon">
-                <div class="yuzde30"><?php echo $LANG["fields"]["balance"]; ?></div>
+                <div class="yuzde30"></div>
                 <div class="yuzde70 version-check" >
                 </div>
             </div>
