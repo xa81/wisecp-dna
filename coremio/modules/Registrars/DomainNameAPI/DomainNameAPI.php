@@ -2,7 +2,7 @@
 /**
  * DomainNameAPI Registrar Module
  * @package    coremio/modules/Registrars/DomainNameAPI
- * @version    1.0.6
+ * @version    1.10.3
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -183,12 +183,15 @@ class DomainNameAPI {
         $detail = $this->api->GetDetails($domain);
         if ($detail["result"] == "OK") {
 
-            if ($detail["data"]["Status"] != "Active")
+            if ($detail["data"]["Status"] != "Active"){
                 return [
                     'status' => "FAIL",
                     //'message' => $this->lang["error6"],
-                ]; else
+                ];
+            }else{
                 return ['config' => ["ID" => $detail["data"]["ID"]]];
+            }
+
         }
 
         $whois = $this->contactProcess($whois);
@@ -197,7 +200,7 @@ class DomainNameAPI {
 
         $additional = [];
 
-        if (substr("com.tr", -3) == ".tr") {
+        if (substr($domain, -3) == ".tr") {
             $additional['TRABISDOMAINCATEGORY'] = $whois['Registrant']['Company'] ? 0 : 1;
             $additional['TRABISCOUNTRYID']      = $whois['Registrant']['Country'] == "TR" ? 215 : 888;
             $additional['TRABISCOUNTRYNAME']    = $whois['Registrant']['Country'];
@@ -263,6 +266,11 @@ class DomainNameAPI {
 
         $status  = "SUCCESS";
         $message = NULL;
+
+        if($response["data"]["Status"] == "waitingfordocument"){
+            $status  = "FAIL";
+            $message = $this->lang["error12"];
+        }
 
 
         return [

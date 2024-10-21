@@ -130,6 +130,13 @@ $soap_exists = class_exists("SoapClient");
             </div>
 
 
+            <div class="formcon">
+                <div class="yuzde30"><?php echo $LANG["fields"]["balance"]; ?></div>
+                <div class="yuzde70 version-check" >
+                </div>
+            </div>
+
+
             <div class="formcon" <?php if (!isset($balance['balances'])) { echo "style='display:none'"; } ?> >
                 <div class="yuzde30"><?php echo $LANG["fields"]["importTld"]; ?></div>
                 <div class="yuzde70">
@@ -393,6 +400,7 @@ $soap_exists = class_exists("SoapClient");
 
   }
 
+  const versionCheckUrl = "https://api.github.com/repos/domainreseller/wisecp-dna/releases/latest";
   const requestUrl = "<?php echo Controllers::$init->getData('links')['controller']; ?>";
   const domainsListRequest = {
     operation : 'module_controller',
@@ -450,6 +458,11 @@ $soap_exists = class_exists("SoapClient");
   const numofTLDNotSyncedTxtMessage = "<?php echo $LANG['numofTLDNotSyncedTxt'];?>";
   const stillProcessingMessage = "<?php echo $LANG['stillProcessing'];?>";
   const expectedProfitRate = <?php echo Config::get('options/domain-profit-rate') * 1; ?>;
+  const currentVersion = '<?php echo $module->config['meta']['version']; ?>';
+  const txtVersion1 = '<?php echo $LANG['version1']; ?>';
+  const txtVersion2 = '<?php echo $LANG['version2']; ?>';
+  const txtVersion3 = '<?php echo $LANG['version3']; ?>';
+  const txtVersion4 = '<?php echo $LANG['version4']; ?>';
 
   let queueTable;
   let tldTable;
@@ -629,6 +642,7 @@ $soap_exists = class_exists("SoapClient");
 
     setTimeout(function() {
        getBalanceInfo();
+       checkModuleVersion();
     }, 500);
 
     $('#DomainNameAPI_import_tld_submit').on('click', function() {
@@ -997,6 +1011,31 @@ $soap_exists = class_exists("SoapClient");
     else {
       $('.excl-save-btn').hide();
     }
+  }
+
+  function checkModuleVersion() {
+
+    $('.version-check').html('<div class="loader" style="scale: 0.4"></div>');
+
+    $.get(versionCheckUrl, function(response) {
+
+      const latestVersion = response.tag_name;
+      const latestUrl = response.html_url;
+      let versionText = '';
+
+      if ('V' + currentVersion !== latestVersion) {
+            versionText = `
+              <p class="out-of-date"><i class="fas fa-minus-circle"></i> ${txtVersion1} <strong>V${currentVersion}</strong>.
+              <br>Sunucudaki son versiyon: <strong>${latestVersion}</strong>${txtVersion2}</p>
+              <a href="${latestUrl}" target="_blank">${txtVersion3}</a>`;
+          } else {
+            versionText = `
+              <p class="up-to-date"><i class="fas fa-check-circle"></i> ${txtVersion4} (V${currentVersion})</p>`;
+          }
+
+      $('.version-check').html(versionText);
+
+    }, 'json');
   }
 
 </script>
