@@ -2,7 +2,7 @@
 /**
  * DomainNameAPI Registrar Module
  * @package    coremio/modules/Registrars/DomainNameAPI
- * @version    1.17.0
+ * @version    1.17.2
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -19,6 +19,10 @@ class DomainNameAPI {
     private $order   = [];
     private $username, $password, $tmode;
     private $domainCacheTTL= 1024;
+
+    const DEFAULT_CACHE_TTL = 3600;
+    const CACHE_KEY_PREFIX = 'DNA-';
+    const CACHE_TABLE = 'mod_dna_cache_elements';
 
     function __construct($external = []) {
 
@@ -151,7 +155,7 @@ class DomainNameAPI {
                 $result[$tld]['status'] = $domain["Status"] == "available" ? "available" : "unavailable";
                 unset($result[$tld]['message']);
 
-                if (isset($domain["ClassKey"]) && $domain["ClassKey"] == "premium") {
+                if (isset($domain["isFee"]) && $domain["isFee"] == "1") {
                     $result[$tld]['premium']       = true;
                     $result[$tld]['premium_price'] = [
                         'amount'   => number_format($domain["Price"], 2, '.', ''),
@@ -1162,13 +1166,13 @@ class DomainNameAPI {
                 $edate  = isset($res["Dates"]["Expiration"]) ? DateManager::format("Y-m-d H:i", $res["Dates"]["Expiration"]) : '';
                 $domain = $res["DomainName"] ?? '';
                 if ($domain) {
-                    $order_id    = 0;
+                    $order_id = $user_data[$domain]['user_info']['order_id'] ?? 0;
                     if ($res["Status"] == "Active")
                         $result['data'][] = [
                             'domain'        => $domain,
                             'creation_date' => $cdate,
                             'end_date'      => $edate,
-                            'order_id'      => $user_data[$domain]['user_info']['order_id'] ?? 0,
+                            'order_id'      => $order_id,
                             'user_data'     => $user_data[$domain]['user_info'],
                         ];
                 }
@@ -1652,13 +1656,13 @@ class DomainNameAPI {
     }
 
 
-    public function rememberCache($key, $function, $ttl = 3600)
+    public function rememberCache($key, $function, $ttl = self::DEFAULT_CACHE_TTL)
     {
         // Güvenli bir hash algoritması kullanın
-        $cache_key = "DNA-" . substr($key, 0, 10) . '_' . hash('sha256', $this->username . $this->password . '-' . $key);
+        $cache_key = self::CACHE_KEY_PREFIX . substr($key, 0, 10) . '_' . hash('sha256', $this->username . $this->password . '-' . $key);
 
         $cache_object = Models::$init->db->select("name,content,updated_at")
-                                         ->from("mod_dna_cache_elements")
+                                         ->from(self::CACHE_TABLE)
                                          ->where("name", '=', $cache_key);
 
         $cache_object = $cache_object->build() ? $cache_object->getAssoc() : false;
@@ -1667,13 +1671,13 @@ class DomainNameAPI {
             $response = $function();
 
             if (!isset($cache_object["name"])) {
-                Models::$init->db->insert("mod_dna_cache_elements", [
+                Models::$init->db->insert(self::CACHE_TABLE, [
                     'name'       => $cache_key,
                     'content'    => base64_encode(serialize($response)),
                     'updated_at' => date('Y-m-d H:i:s'),
                 ]);
             } else {
-                Models::$init->db->update("mod_dna_cache_elements", [
+                Models::$init->db->update(self::CACHE_TABLE, [
                     'content'    => base64_encode(serialize($response)),
                     'updated_at' => date('Y-m-d H:i:s'),
                 ])
