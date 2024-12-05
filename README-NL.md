@@ -27,6 +27,10 @@ Deze module is een integratie van 'domainnameapi.com' voor WiseCP. (Laatste upda
 4. Ga naar het menu Producten/Diensten en selecteer "Domeinregistratie".
 5. Klik op de installatiestap.
 
+## Update
+
+Plaats de map "coremio" uit de gedownloade map in de map waar WISECP is geïnstalleerd. Stuur het bestand config.php niet mee. Als u dat doet, kunnen uw huidige instellingen worden gewist.
+
 ![Screenshot van de installatie](https://github.com/domainreseller/wisecp-dna/assets/118720541/0cc8cca1-980e-4ae2-928a-28a809da87eb)
 
 ### Informatie voor resellergebruiker
