@@ -27,6 +27,10 @@ Bu modul, WiseCP üçün 'domainnameapi.com' inteqrasiyasıdır. (Son yeniləmə
 4. Məhsullar/Xidmətlər menyusuna daxil olun və "Domain Qeydiyyatı"nı seçin.
 5. Quraşdırma addımına klikləyin.
 
+## Yenilənmə
+
+Yüklədiyiniz qovluqdakı "coremio" qovluğunu WISECP quraşdırıldığı qovluğa atın. config.php faylını göndərməyin. Əgər göndərsəniz, mövcud parametrləriniz silinə bilər.
+
 ![Quraşdırma Ekranı](https://github.com/domainreseller/wisecp-dna/assets/118720541/0cc8cca1-980e-4ae2-928a-28a809da87eb)
 
 ### Bayi İstifadəçi Məlumatları

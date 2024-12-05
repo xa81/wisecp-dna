@@ -26,6 +26,11 @@ Bu modül, WiseCP için geliştirilmiş bir 'domainnameapi.com' entegrasyonudur.
 4. Ürünler/Hizmetler menüsüne gelin ve "Alan Adı Tescili"ni seçin.
 5. Kurulum adımına tıklayın.
 
+## Güncelleme
+
+İndirdiğiniz klasör içindeki "coremio" klasörünün WISECP kurulu olduğu klasörün içine atın. config.php dosyasını göndermeyin. Gönderirseniz, mevcut ayarlarınız silinebilir.
+
+
 ![Kurulum Ekran](https://github.com/domainreseller/wisecp-dna/assets/118720541/0cc8cca1-980e-4ae2-928a-28a809da87eb)
 
 ### Bayi Kullanıcı Bilgileri

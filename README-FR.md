@@ -27,6 +27,10 @@ Ce module est une intégration de 'domainnameapi.com' pour WiseCP. (Dernière mi
 4. Accédez au menu Produits/Services et sélectionnez "Enregistrement de domaine".
 5. Cliquez sur l'étape d'installation.
 
+## Mise à jour
+
+Déplacez le dossier "coremio" du dossier téléchargé dans le dossier où WISECP est installé. Ne transférez pas le fichier config.php. Si vous le faites, vos paramètres actuels pourraient être supprimés.
+
 ![Capture d'écran de l'installation](https://github.com/domainreseller/wisecp-dna/assets/118720541/0cc8cca1-980e-4ae2-928a-28a809da87eb)
 
 ### Informations de l'utilisateur revendeur

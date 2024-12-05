@@ -2,7 +2,7 @@
 /**
  * DomainNameAPI Registrar Module
  * @package    coremio/modules/Registrars/DomainNameAPI
- * @version    1.17.2
+ * @version    1.17.3
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -23,6 +23,7 @@ class DomainNameAPI {
     const DEFAULT_CACHE_TTL = 3600;
     const CACHE_KEY_PREFIX = 'DNA-';
     const CACHE_TABLE = 'mod_dna_cache_elements';
+    const QUERY_CACHE_TTL = 300;
 
     function __construct($external = []) {
 
@@ -135,7 +136,7 @@ class DomainNameAPI {
  
         $response = $this->rememberCache("domain_query_".md5(json_encode([$sld, $tlds])),function () use ($sld, $tlds){
             return $this->api->CheckAvailability([$sld], $tlds, 1, "create");
-        },600);
+        },self::QUERY_CACHE_TTL);
 
 
         $result = [];
@@ -155,7 +156,7 @@ class DomainNameAPI {
                 $result[$tld]['status'] = $domain["Status"] == "available" ? "available" : "unavailable";
                 unset($result[$tld]['message']);
 
-                if (isset($domain["isFee"]) && $domain["isFee"] == "1") {
+                if (isset($domain["IsFee"]) && $domain["IsFee"] === true) {
                     $result[$tld]['premium']       = true;
                     $result[$tld]['premium_price'] = [
                         'amount'   => number_format($domain["Price"], 2, '.', ''),
@@ -164,6 +165,8 @@ class DomainNameAPI {
                 }
             }
         }
+
+
 
         return $result;
 
