@@ -10,7 +10,7 @@
 
 # Handleiding voor het gebruik van de Domainnameapi-module
 
-Deze module is een integratie van 'domainnameapi.com' voor WiseCP. (Laatste update 11 juni 2024)
+Deze module is een integratie van 'domainnameapi.com' voor WiseCP.
 
 
 ## Vereisten
