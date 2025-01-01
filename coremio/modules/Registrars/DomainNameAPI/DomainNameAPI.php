@@ -2,7 +2,7 @@
 /**
  * DomainNameAPI Registrar Module
  * @package    coremio/modules/Registrars/DomainNameAPI
- * @version    1.17.4
+ * @version    1.17.5
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/

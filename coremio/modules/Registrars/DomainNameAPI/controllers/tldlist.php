@@ -10,8 +10,12 @@ $draw   = (int)Filter::POST("draw");
 $start  = (int)Filter::POST("start");
 $length = (int)Filter::POST("length");
 
+try{
+    $tlds = $module->list_tlds();
+}catch (Exception $e) {
+    $tlds=[];
+}
 
-$tlds = $module->list_tlds();
 
 if(!is_array($tlds['tlds'])) {
     $tlds['tlds'] = [];
