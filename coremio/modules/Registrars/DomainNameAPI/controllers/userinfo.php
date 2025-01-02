@@ -6,7 +6,17 @@ if (!defined("CORE_FOLDER")) {
 
 /** @var $module DomainNameAPI */
 
-$user = $module->getDNAUser();
+try {
+    $user = $module->getDNAUser();
+}catch (Exception $e) {
+    $user = [
+        'result' => 'ERROR',
+        'error'  => [
+            'Code'    => $e->getCode(),
+            'Details' => $e->getMessage(),
+        ],
+    ];
+}
 
 $resp = [
     'loggedin' => $user["result"] == "OK",
