@@ -34,15 +34,9 @@ class DomainNameAPI {
 
     function __construct($external = []) {
 
-        /**
-         * @todo check if config , first time or update
-         */
-        $this->config = Modules::Config("Registrars", __CLASS__);
 
-        /**
-         * @todo get language file
-         */
-        $this->lang   = Modules::Lang("Registrars", __CLASS__);
+        $this->arrangeModuleConfig();
+
         if (is_array($external) && sizeof($external) > 0)
             $this->config = array_merge($this->config, $external);
         if (!isset($this->config["settings"]["username"]) || !isset($this->config["settings"]["password"])) {
@@ -77,10 +71,28 @@ class DomainNameAPI {
 
     }
 
-    private function arrangeConfig($config) {
-        //if not exists
-        //if exists , update version
+    private function arrangeModuleConfig() {
+        $config_file = __DIR__ . DS . "config.php";
+        $sample_file = __DIR__ . DS . "config.sample.php";
+        
+        // Eğer config.php yoksa config.sample.php'den oluştur
+        if (!file_exists($config_file) && file_exists($sample_file)) {
+            $config_content = require $sample_file;
+            $array_export = Utility::array_export($config_content, ['pwith' => true]);
+            FileManager::file_write($config_file, $array_export);
+        }
+        
+        // Mevcut config'i al
         $this->config = Modules::Config("Registrars", __CLASS__);
+        
+        // Version değişmişse güncelle ve kaydet
+        if(!isset($this->config["meta"]["version"]) || $this->config["meta"]["version"] !== $this->version) {
+            $this->config["meta"]["version"] = $this->version;
+            $array_export = Utility::array_export($this->config, ['pwith' => true]);
+            FileManager::file_write($config_file, $array_export);
+        }
+
+         $this->lang   = Modules::Lang("Registrars", __CLASS__);
     }
 
     /**
