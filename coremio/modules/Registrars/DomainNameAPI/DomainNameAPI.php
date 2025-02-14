@@ -77,9 +77,7 @@ class DomainNameAPI {
         
         // Eğer config.php yoksa config.sample.php'den oluştur
         if (!file_exists($config_file) && file_exists($sample_file)) {
-            $config_content = require $sample_file;
-            $array_export = Utility::array_export($config_content, ['pwith' => true]);
-            FileManager::file_write($config_file, $array_export);
+            copy($sample_file, $config_file);
         }
         
         // Mevcut config'i al
