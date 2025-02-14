@@ -77,6 +77,12 @@ class DomainNameAPI {
 
     }
 
+    private function arrangeConfig($config) {
+        //if not exists
+        //if exists , update version
+        $this->config = Modules::Config("Registrars", __CLASS__);
+    }
+
     /**
      * Set credentials
      * @return bool
