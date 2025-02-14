@@ -34,9 +34,13 @@ class DomainNameAPI {
 
     function __construct($external = []) {
 
-        $this->config = Modules::Config("Registrars", __CLASS__);
         /**
          * @todo check if config , first time or update
+         */
+        $this->config = Modules::Config("Registrars", __CLASS__);
+
+        /**
+         * @todo get language file
          */
         $this->lang   = Modules::Lang("Registrars", __CLASS__);
         if (is_array($external) && sizeof($external) > 0)
