@@ -872,7 +872,10 @@ class DomainNameAPI {
     public function sync($params = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
-        $OrderDetails = $this->api->getDetails($domain);
+        $OrderDetails =$this->rememberCache('sync_'.trim($domain),function () use ($domain){
+            return $this->api->getDetails($domain);
+        },rand((int)$this->domainCacheTTL*0.8,(int)$this->domainCacheTTL*2.5));
+
         if ($OrderDetails["result"] != "OK") {
             $this->error = $OrderDetails["error"]["Details"];
             return false;
@@ -901,7 +904,9 @@ class DomainNameAPI {
     public function transfer_sync($params = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
-        $OrderDetails = $this->api->getDetails($domain);
+        $OrderDetails =$this->rememberCache('sync_'.trim($domain),function () use ($domain){
+            return $this->api->getDetails($domain);
+        },rand((int)$this->domainCacheTTL*0.8,(int)$this->domainCacheTTL*2.5));
         if ($OrderDetails["result"] != "OK") {
             $this->error = $OrderDetails["error"]["Details"];
             return false;
