@@ -1221,8 +1221,11 @@ class DomainNameAPI {
                                           ->where("name", "=", $tld);
 
             $productID = $productID->build() ? $productID->getObject()->id : false;
-            if (!$productID)
-                continue;
+            if (!$productID){
+                $results[$domain] = 'TLD is not supported';
+                 continue;
+            }
+
             $productPrice     = Products::get_price("register", "tld", $productID);
             $productPrice_amt = $productPrice["amount"];
             $productPrice_cid = $productPrice["cid"];
@@ -1246,7 +1249,6 @@ class DomainNameAPI {
 
             if (isset($info["whois_privacy"]) && $info["whois_privacy"]) {
                 $options["whois_privacy"] = $info["whois_privacy"]["status"] == "enable";
-                $wprivacy_endtime         = DateManager::ata();
                 if (isset($info["whois_privacy"]["end_time"]) && $info["whois_privacy"]["end_time"]) {
                     $wprivacy_endtime                 = $info["whois_privacy"]["end_time"];
                     $options["whois_privacy_endtime"] = $wprivacy_endtime;

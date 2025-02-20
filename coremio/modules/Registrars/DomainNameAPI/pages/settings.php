@@ -916,49 +916,51 @@ $soap_exists = class_exists("SoapClient");
   }
 
   function processQueue(queueLength) {
-      const queueData = queueTable.rows().data().toArray();
-      let currentIndex = 0;
+    const queueData = queueTable.rows().data().toArray();
+    let currentIndex = 0;
 
-      const processNext = () => {
-        if (currentIndex < queueData.length) {
-          const rowData = queueData[currentIndex];
-          const domain = rowData[0];
-          const userField = $('<div>').html(rowData[2]);
-          const userId = userField.find('input[name="user_id"]').val();
-          const userName = userField.find('span').text();
+    const processNext = () => {
+      if (currentIndex < queueData.length) {
+        const rowData = queueData[currentIndex];
+        const domain = rowData[0];
+        const userField = $('<div>').html(rowData[2]);
+        const userId = userField.find('input[name="user_id"]').val();
+        const userName = userField.find('span').text();
 
-          const postData = $.extend({}, domainsListRequest, {
-            domain: domain,
-            user_id: userId,
-            controller: 'import-single'
-          });
+        const postData = $.extend({}, domainsListRequest, {
+          domain    : domain,
+          user_id   : userId,
+          controller: 'import-single',
+        });
 
-          swal({
-            title: importProcessingMessage,
-            html: `<div style="display: inline-flex;">${processMessage} ${currentIndex + 1}/${queueLength} <div class="loader" style="scale: 0.4"></div></div><div>${domain} → ${userName}</div>`,
-            allowOutsideClick: false,
-            showConfirmButton: false,
-          });
+        swal({
+          title            : importProcessingMessage,
+          html             : `<div style="display: inline-flex;">${processMessage} ${currentIndex +
+          1}/${queueLength} <div class="loader" style="scale: 0.4"></div></div><div>${domain} → ${userName}</div>`,
+          allowOutsideClick: false,
+          showConfirmButton: false,
+        });
 
-          $.post(requestUrl, postData, function(response) {
-            currentIndex++;
-            processNext();
-          });
-        } else {
-          swal.close();
-          swal({
-            icon: 'success',
-            title: importFinishedMessage,
-            confirmButtonText: okMessage,
-          }).then(() => {
-            queueTable.clear().draw();
-            $('#dna-list-domains').DataTable().ajax.reload();
-  });
-        }
-      };
+        $.post(requestUrl, postData, function(response) {
+          currentIndex++;
+          processNext();
+        });
+      }
+      else {
+        swal.close();
+        swal({
+          icon             : 'success',
+          title            : importFinishedMessage,
+          confirmButtonText: okMessage,
+        }).then(() => {
+          queueTable.clear().draw();
+          $('#dna-list-domains').DataTable().ajax.reload();
+        });
+      }
+    };
 
-      processNext();
-    }
+    processNext();
+  }
 
   function DNAOpenTab(elem, tabName) {
     const owner = 'dna-tab';
