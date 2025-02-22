@@ -5,7 +5,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 /**
  * DomainNameAPI Registrar Module
  * @package    coremio/modules/Registrars/DomainNameAPI
- * @version    1.17.12
+ * @version    1.17.14
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -15,7 +15,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 
 class DomainNameAPI {
 
-    public $version = "1.17.12";
+    public $version = "1.17.14";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -34,8 +34,9 @@ class DomainNameAPI {
 
     function __construct($external = []) {
 
-        $this->config = Modules::Config("Registrars", __CLASS__);
-        $this->lang   = Modules::Lang("Registrars", __CLASS__);
+
+        $this->arrangeModuleConfig();
+
         if (is_array($external) && sizeof($external) > 0)
             $this->config = array_merge($this->config, $external);
         if (!isset($this->config["settings"]["username"]) || !isset($this->config["settings"]["password"])) {
@@ -68,6 +69,28 @@ class DomainNameAPI {
         $this->password = $password;
         $this->tmode    = $tmode;
 
+    }
+
+    private function arrangeModuleConfig() {
+        $config_file = __DIR__ . DS . "config.php";
+        $sample_file = __DIR__ . DS . "config.sample.php";
+        
+        // Eğer config.php yoksa config.sample.php'den oluştur
+        if (!file_exists($config_file) && file_exists($sample_file)) {
+            copy($sample_file, $config_file);
+        }
+        
+        // Mevcut config'i al
+        $this->config = Modules::Config("Registrars", __CLASS__);
+        
+        // Version değişmişse güncelle ve kaydet
+        if(!isset($this->config["meta"]["version"]) || $this->config["meta"]["version"] !== $this->version) {
+            $this->config["meta"]["version"] = $this->version;
+            $array_export = Utility::array_export($this->config, ['pwith' => true]);
+            FileManager::file_write($config_file, $array_export);
+        }
+
+         $this->lang   = Modules::Lang("Registrars", __CLASS__);
     }
 
     /**
@@ -849,7 +872,10 @@ class DomainNameAPI {
     public function sync($params = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
-        $OrderDetails = $this->api->getDetails($domain);
+        $OrderDetails =$this->rememberCache('sync_'.trim($domain),function () use ($domain){
+            return $this->api->getDetails($domain);
+        },rand((int)$this->domainCacheTTL*0.8,(int)$this->domainCacheTTL*2.5));
+
         if ($OrderDetails["result"] != "OK") {
             $this->error = $OrderDetails["error"]["Details"];
             return false;
@@ -878,7 +904,9 @@ class DomainNameAPI {
     public function transfer_sync($params = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
-        $OrderDetails = $this->api->getDetails($domain);
+        $OrderDetails =$this->rememberCache('sync_'.trim($domain),function () use ($domain){
+            return $this->api->getDetails($domain);
+        },rand((int)$this->domainCacheTTL*0.8,(int)$this->domainCacheTTL*2.5));
         if ($OrderDetails["result"] != "OK") {
             $this->error = $OrderDetails["error"]["Details"];
             return false;
@@ -1193,8 +1221,11 @@ class DomainNameAPI {
                                           ->where("name", "=", $tld);
 
             $productID = $productID->build() ? $productID->getObject()->id : false;
-            if (!$productID)
-                continue;
+            if (!$productID){
+                $results[$domain] = 'TLD is not supported';
+                 continue;
+            }
+
             $productPrice     = Products::get_price("register", "tld", $productID);
             $productPrice_amt = $productPrice["amount"];
             $productPrice_cid = $productPrice["cid"];
@@ -1218,7 +1249,6 @@ class DomainNameAPI {
 
             if (isset($info["whois_privacy"]) && $info["whois_privacy"]) {
                 $options["whois_privacy"] = $info["whois_privacy"]["status"] == "enable";
-                $wprivacy_endtime         = DateManager::ata();
                 if (isset($info["whois_privacy"]["end_time"]) && $info["whois_privacy"]["end_time"]) {
                     $wprivacy_endtime                 = $info["whois_privacy"]["end_time"];
                     $options["whois_privacy_endtime"] = $wprivacy_endtime;
