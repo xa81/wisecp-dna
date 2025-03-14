@@ -25,6 +25,10 @@ $whidden_curr   = Filter::POST("whidden-currency", "numbers");
 $test_mode      = Filter::POST("test-mode", "numbers");
 $adp            = Filter::POST("adp", "numbers");
 $cost_cid       = Filter::POST("cost-currency", "numbers");
+$same_prices    = Filter::POST("same-prices", "numbers");
+$register_price = Filter::POST("register-price", "numbers");
+$transfer_price = Filter::POST("transfer-price", "numbers");
+$renewal_price  = Filter::POST("renewal-price", "numbers");
 $exclude        = Filter::POST("exclude", "hclear");
 $api_version    = Filter::POST("api-version", "hclear");
 
@@ -66,6 +70,21 @@ if ($exclude !== false && $exclude != $config["settings"]["exclude"]) {
     $sets["settings"]["exclude"] = $exclude;
 }
 
+if ((int)$same_prices != (int)$config["settings"]["same-prices"]||(int)$same_prices==0 ) {
+    $sets["settings"]["same-prices"] = (bool)$same_prices==1;
+}
+
+if ((int)$register_price != $config["settings"]["register-price"]) {
+    $sets["settings"]["register-price"] = (int)$register_price;
+}
+
+if ((int)$transfer_price != $config["settings"]["transfer-price"]) {
+    $sets["settings"]["transfer-price"] = (int)$transfer_price;
+}
+if ((int)$renewal_price != $config["settings"]["renewal-price"]) {
+    $sets["settings"]["renewal-price"] = (int)$renewal_price;
+}
+
 
 $profit_rate = Filter::POST("profit-rate", "amount");
 if($profit_rate !== false ) {
@@ -87,8 +106,7 @@ if ($sets) {
 }
 
 //check table exist
-$table_exists = Models::$init->db->query('SHOW TABLES LIKE "mod_dna_cache_elements"')
-                                 ->rowCount();
+$table_exists = Models::$init->db->query('SHOW TABLES LIKE "mod_dna_cache_elements"')->rowCount();
 if ($table_exists !== 1) {
     Models::$init->db->query('CREATE TABLE IF NOT EXISTS mod_dna_cache_elements (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(255),content LONGTEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME,INDEX index_cache_name (name) ); ')
                      ->execute();
