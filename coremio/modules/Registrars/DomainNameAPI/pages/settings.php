@@ -118,40 +118,6 @@ $soap_exists = class_exists("SoapClient");
                 <div class="yuzde70">
                     <input type="text" name="profit-rate" value="<?php
                     echo Config::get("options/domain-profit-rate"); ?>" style="width: 50px;" onkeypress='return event.charCode==44 || event.charCode==46 || event.charCode>= 48 &&event.charCode<= 57'>
-
-
-                    <input type="checkbox" <?php echo isset($CONFIG["settings"]["same-prices"]) && $CONFIG["settings"]["same-prices"] === false ? ' ' : ' checked'; ?> id="same-prices" name="same-prices" value="1" class="checkbox-custom">
-                    <label class="checkbox-custom-label" for="same-prices">Tüm fiyatlar aynı</label>
-
-                    <div id="different-prices" style="<?php echo isset($CONFIG["settings"]["same-prices"]) && $CONFIG["settings"]["same-prices"] === false ? ' ' : ' display: none'; ?>;">
-                        <div class="formcon">
-                            <div class="yuzde10">Kayıt:</div>
-                            <div class="yuzde90">
-                                <div class="input-group">
-                                    <input type="text" name="register-price" class="optional-prices" value="<?php echo $CONFIG["settings"]["register-price"]; ?>" style="width: 50px;" onkeypress='return event.charCode==44 || event.charCode==46 || event.charCode>= 48 &&event.charCode<= 57'>
-                                    <span class="input-group-addon">%</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="formcon">
-                            <div class="yuzde10">Transfer:</div>
-                            <div class="yuzde90">
-                                <div class="input-group">
-                                    <input type="text" name="transfer-price" class="optional-prices" value="<?php echo $CONFIG["settings"]["transfer-price"]; ?>" style="width: 50px;" onkeypress='return event.charCode==44 || event.charCode==46 || event.charCode>= 48 &&event.charCode<= 57'>
-                                    <span class="input-group-addon">%</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="formcon">
-                            <div class="yuzde10">Yenileme:</div>
-                            <div class="yuzde90">
-                                <div class="input-group">
-                                    <input type="text" name="renewal-price" class="optional-prices" value="<?php echo $CONFIG["settings"]["renewal-price"]; ?>" style="width: 50px;" onkeypress='return event.charCode==44 || event.charCode==46 || event.charCode>= 48 &&event.charCode<= 57'>
-                                    <span class="input-group-addon">%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <script type="text/javascript">

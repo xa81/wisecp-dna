@@ -5,7 +5,8 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 /**
  * DomainNameAPI Registrar Module
  * @package    coremio/modules/Registrars/DomainNameAPI
- * @version    1.17.16
+
+ * @version    1.17.17
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -15,7 +16,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 
 class DomainNameAPI {
 
-    public $version = "1.17.16";
+    public $version = "1.17.17";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -426,8 +427,8 @@ class DomainNameAPI {
         $returns = [];
 
         foreach (range(0,5) as $k => $v) {
-            if (isset($domainDetail["data"]["[NameServers"][$k])) {
-                $returns["ns" . ($k + 1)] = $domainDetail["data"]["[NameServers"][$k];
+            if (isset($domainDetail["data"]["NameServers"][$k])) {
+                $returns["ns" . ($k + 1)] = $domainDetail["data"]["NameServers"][$k];
             }
         }
 
