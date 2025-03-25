@@ -5,6 +5,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 /**
  * DomainNameAPI Registrar Module
  * @package    coremio/modules/Registrars/DomainNameAPI
+
  * @version    1.17.17
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
@@ -1474,6 +1475,16 @@ class DomainNameAPI {
 
         $cost_cid    = isset($this->config["settings"]["cost-currency"]) ? $this->config["settings"]["cost-currency"] : 4;
         $profit_rate = Config::get("options/domain-profit-rate");
+        $same_prices= $this->config['setting']['same_prices'];
+        $register_profit= $this->config['setting']['register_price'];
+        $transfer_profit= $this->config['setting']['transfer_price'];
+        $renewal_profit= $this->config['setting']['renewal_price'];
+        if($same_prices){
+            $register_profit= $profit_rate;
+            $transfer_profit= $profit_rate;
+            $renewal_profit= $profit_rate;
+        }
+
 
         foreach ($response["data"] as $row) {
             if(is_array($selected_tlds) && count($selected_tlds)>0){
@@ -1530,9 +1541,9 @@ class DomainNameAPI {
                 $transfer_cost = Money::exChange($transfer_cost, $cost_cid, $tld_cid);
 
 
-                $reg_profit = Money::get_discount_amount($register_cost, $profit_rate);
-                $ren_profit = Money::get_discount_amount($renewal_cost, $profit_rate);
-                $tra_profit = Money::get_discount_amount($transfer_cost, $profit_rate);
+                $reg_profit = Money::get_discount_amount($register_cost, $register_profit);
+                $ren_profit = Money::get_discount_amount($renewal_cost, $renewal_profit);
+                $tra_profit = Money::get_discount_amount($transfer_cost, $transfer_profit);
 
                 $register_sale = $register_cost + $reg_profit;
                 $renewal_sale  = $renewal_cost + $ren_profit;
@@ -1582,9 +1593,9 @@ class DomainNameAPI {
                 $transfer_cost = Money::deformatter($api_cost_prices["transfer"]);
 
 
-                $reg_profit = Money::get_discount_amount($register_cost, $profit_rate);
-                $ren_profit = Money::get_discount_amount($renewal_cost, $profit_rate);
-                $tra_profit = Money::get_discount_amount($transfer_cost, $profit_rate);
+                $reg_profit = Money::get_discount_amount($register_cost, $register_profit);
+                $ren_profit = Money::get_discount_amount($renewal_cost, $renewal_profit);
+                $tra_profit = Money::get_discount_amount($transfer_cost, $transfer_profit);
 
                 $register_sale = $register_cost + $reg_profit;
                 $renewal_sale  = $renewal_cost + $ren_profit;
