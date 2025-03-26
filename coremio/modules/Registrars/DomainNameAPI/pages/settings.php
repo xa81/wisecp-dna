@@ -116,26 +116,8 @@ $soap_exists = class_exists("SoapClient");
             <div class="formcon">
                 <div class="yuzde30"><?php echo __("admin/products/profit-rate-for-registrar-module"); ?></div>
                 <div class="yuzde70">
-                    <input type="text" name="profit-rate" value="<?php
-                    echo Config::get("options/domain-profit-rate"); ?>" style="width: 50px;" onkeypress='return event.charCode==44 || event.charCode==46 || event.charCode>= 48 &&event.charCode<= 57'>
+                    <input type="text" name="profit-rate" value="<?php echo Config::get("options/domain-profit-rate"); ?>" style="width: 50px;" onkeypress='return event.charCode==44 || event.charCode==46 || event.charCode>= 48 &&event.charCode<= 57'>
                 </div>
-
-                <script type="text/javascript">
-                    document.getElementById('same-prices').addEventListener('change', function() {
-                        var differentPrices = document.getElementById('different-prices');
-                        if (this.checked) {
-                            differentPrices.style.display = 'none';
-                            document.querySelectorAll('.optional-prices').forEach(function(input) {
-                                input.removeAttribute('required');
-                            });
-                        } else {
-                            differentPrices.style.display = 'block';
-                            document.querySelectorAll('.optional-prices').forEach(function(input) {
-                                input.setAttribute('required', 'required');
-                            });
-                        }
-                    });
-                </script>
             </div>
 
 
@@ -205,21 +187,6 @@ $soap_exists = class_exists("SoapClient");
             });
 
             $('#DomainNameAPI_submit').click(function() {
-
-              if ($('#different-prices').is(':visible')) {
-                var valid = true;
-                $('.optional-prices').each(function() {
-                  var value = parseFloat($(this).val());
-                  if (isNaN(value) || value < 1) {
-                    valid = false;
-                  }
-                });
-                if (!valid) {
-                  alert_error('Oranlar boş veya 1\'den düşük olamaz.', {timer: 5000});
-                  return false;
-                }
-              }
-
               $('#DomainNameAPISettings input[name=controller]').val('settings');
               MioAjaxElement($(this), {
                 waiting_text : waiting_text,
@@ -497,22 +464,12 @@ $soap_exists = class_exists("SoapClient");
   const numofTLDNotSyncedTxtMessage = "<?php echo $LANG['numofTLDNotSyncedTxt'];?>";
   const stillProcessingMessage = "<?php echo $LANG['stillProcessing'];?>";
   const expectedProfitRate = <?php echo Config::get('options/domain-profit-rate') * 1; ?>;
-  let expectedProfitRateRegister = <?php echo $CONFIG["settings"]["register-price"]* 1; ?>;
-  let expectedProfitRateTransfer = <?php echo $CONFIG["settings"]["transfer-price"]* 1; ?>;
-  let expectedProfitRateRenew = <?php echo $CONFIG["settings"]["renewal-price"]* 1; ?>;
-  const profitSeperated = <?php echo $CONFIG['settings']['same-prices']===false?'true':'false'; ?>;
   const currentVersion = '<?php echo $module->version; ?>';
   const txtVersion1 = '<?php echo $LANG['version1']; ?>';
   const txtVersion2 = '<?php echo $LANG['version2']; ?>';
   const txtVersion3 = '<?php echo $LANG['version3']; ?>';
   const txtVersion4 = '<?php echo $LANG['version4']; ?>';
   const eplasedTime = '<?php echo $LANG['eplasedTime']; ?>';
-
-  if (profitSeperated === false) {
-    expectedProfitRateRegister = expectedProfitRate;
-    expectedProfitRateTransfer = expectedProfitRate;
-    expectedProfitRateRenew = expectedProfitRate;
-  }
 
   let queueTable;
   let tldTable;
@@ -656,13 +613,13 @@ $soap_exists = class_exists("SoapClient");
             {'data': null, 'render': function(data, type, row, meta) {return renderModuleIcon(row.module);}},
             {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.register_cost);}},
             {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.register_current);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderMarginPercent(row.register_margin_percent, expectedProfitRateRegister);}},
+            {'data': null, 'render': function(data, type, row, meta) {return renderMarginPercent(row.register_margin_percent, expectedProfitRate);}},
             {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.transfer_cost);}},
             {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.transfer_current);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderMarginPercent(row.transfer_margin_percent, expectedProfitRateTransfer);}},
+            {'data': null, 'render': function(data, type, row, meta) {return renderMarginPercent(row.transfer_margin_percent, expectedProfitRate);}},
             {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.renewal_cost);}},
             {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.renewal_current);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderMarginPercent(row.renewal_margin_percent, expectedProfitRateRenew);}},
+            {'data': null, 'render': function(data, type, row, meta) {return renderMarginPercent(row.renewal_margin_percent, expectedProfitRate);}},
             {'data': null, 'render': function(data, type, row, meta) {return renderExcludedTldCb(row);}}
 
         ],
