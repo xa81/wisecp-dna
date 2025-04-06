@@ -6,7 +6,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * DomainNameAPI Registrar Module
  * @package    coremio/modules/Registrars/DomainNameAPI
 
- * @version    1.17.18
+ * @version    1.17.19
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -16,7 +16,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 
 class DomainNameAPI {
 
-    public $version = "1.17.18";
+    public $version = "1.17.19";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -32,6 +32,17 @@ class DomainNameAPI {
     const CACHE_KEY_PREFIX = 'DNA-';
     const CACHE_TABLE = 'mod_dna_cache_elements';
     const QUERY_CACHE_TTL = 300;
+    const LOGGING_CONFIG_NAME = 'Registrars';
+    
+    // Cache Keys
+    const CACHE_KEY_DOMAIN_PREFIX = 'dom_';
+    const CACHE_KEY_CONTACT_PREFIX = 'cnt_';
+    const CACHE_KEY_SYNC_PREFIX = 'sync_';
+    const CACHE_KEY_TLD_LIST = 'tld_list';
+    const CACHE_KEY_DOMAIN_QUERY = 'domain_query_';
+    const CACHE_KEY_DNA_USER = 'dna_user';
+    const CACHE_KEY_DOMAINSDT_PREFIX = 'domainsdt_';
+    const CACHE_KEY_USER_INFO_PREFIX = 'user_info_short_';
 
     function __construct($external = []) {
 
@@ -82,7 +93,7 @@ class DomainNameAPI {
         }
         
         // Mevcut config'i al
-        $this->config = Modules::Config("Registrars", __CLASS__);
+        $this->config = Modules::Config(self::LOGGING_CONFIG_NAME, __CLASS__);
         
         // Version değişmişse güncelle ve kaydet
         if(!isset($this->config["meta"]["version"]) || $this->config["meta"]["version"] !== $this->version) {
@@ -91,7 +102,7 @@ class DomainNameAPI {
             FileManager::file_write($config_file, $array_export);
         }
 
-         $this->lang   = Modules::Lang("Registrars", __CLASS__);
+         $this->lang   = Modules::Lang(self::LOGGING_CONFIG_NAME, __CLASS__);
     }
 
     /**
@@ -165,7 +176,7 @@ class DomainNameAPI {
         }
 
  
-        $response = $this->rememberCache("domain_query_".md5(json_encode([$sld, $tlds])),function () use ($sld, $tlds){
+        $response = $this->rememberCache(self::CACHE_KEY_DOMAIN_QUERY.md5(json_encode([$sld, $tlds])),function () use ($sld, $tlds){
             return $this->api->CheckAvailability([$sld], $tlds, 1, "create");
         },self::QUERY_CACHE_TTL);
 
@@ -278,7 +289,7 @@ class DomainNameAPI {
         }
 
 
-        Modules::save_log("Registrars", __CLASS__, "PreRegister", [
+        Modules::save_log(self::LOGGING_CONFIG_NAME, __CLASS__, "PreRegister", [
             'domain'   => $domain,
             'year'     => $year,
             'start_at' => date('Y-m-d H:i:s'),
@@ -286,7 +297,7 @@ class DomainNameAPI {
 
         $response = $this->api->RegisterWithContactInfo($domain, $year, $whois, $dns, false, $wprivacy, $additional);
 
-        Modules::save_log("Registrars", __CLASS__, "Register", [
+        Modules::save_log(self::LOGGING_CONFIG_NAME, __CLASS__, "Register", [
             'domain'    => $domain,
             'year'      => $year,
             'whois'     => $whois,
@@ -342,7 +353,7 @@ class DomainNameAPI {
 
         $handle = $this->api->Renew($domain, $year);
 
-        Modules::save_log("Registrars", __CLASS__, ucfirst(__FUNCTION__), [
+        Modules::save_log(self::LOGGING_CONFIG_NAME, __CLASS__, ucfirst(__FUNCTION__), [
             'domain'    => $domain,
             'year'      => $year,
         ], $handle);
@@ -373,7 +384,7 @@ class DomainNameAPI {
 
         $response = $this->api->Transfer($domain, $tcode, $year);
 
-        Modules::save_log("Registrars", __CLASS__, ucfirst(__FUNCTION__), [
+        Modules::save_log(self::LOGGING_CONFIG_NAME, __CLASS__, ucfirst(__FUNCTION__), [
             'domain'    => $domain,
             'year'      => $year,
         ], $response);
@@ -414,7 +425,7 @@ class DomainNameAPI {
     public function NsDetails($params = []) {
         $this->set_credentials();
         $domain       = trim($params["domain"]);
-        $domainCacheKey = "dom_".$domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX.$domain;
         $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
             return $this->api->getDetails($domain);
         },$this->domainCacheTTL);
@@ -445,7 +456,7 @@ class DomainNameAPI {
     {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
-        $domainCacheKey = "dom_" . $domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
         }, $this->domainCacheTTL);
@@ -484,7 +495,7 @@ class DomainNameAPI {
     public function CNSList($params = []) {
         $this->set_credentials();
         $domain       = trim($params["domain"]);
-        $domainCacheKey = "dom_".$domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX.$domain;
         $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
             return $this->api->getDetails($domain);
         },$this->domainCacheTTL);
@@ -525,7 +536,7 @@ class DomainNameAPI {
     {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
-        $domainCacheKey = "dom_" . $domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
         }, $this->domainCacheTTL);
@@ -559,7 +570,7 @@ class DomainNameAPI {
     public function ModifyCNS($params = [], $cns = [], $ns = '', $ip = '') {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
-        $domainCacheKey = "dom_" . $domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX . $domain;
         $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
             return $this->api->getDetails($domain);
         },$this->domainCacheTTL);
@@ -594,7 +605,7 @@ class DomainNameAPI {
     {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
-        $domainCacheKey = "dom_" . $domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
         }, $this->domainCacheTTL);
@@ -623,7 +634,7 @@ class DomainNameAPI {
     {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
-        $domainCacheKey = "dom_" . $domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
         }, $this->domainCacheTTL);
@@ -646,7 +657,7 @@ class DomainNameAPI {
     {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
-        $domainCacheKey = "dom_" . $domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
         }, $this->domainCacheTTL);
@@ -662,7 +673,7 @@ class DomainNameAPI {
             return false;
         }
         $this->invalidateCache($domainCacheKey);
-        $this->invalidateCache('cnt_' . $domainCacheKey);
+        $this->invalidateCache(self::CACHE_KEY_CONTACT_PREFIX . $domainCacheKey);
         return true;
     }
 
@@ -751,7 +762,7 @@ class DomainNameAPI {
     {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
-        $domainCacheKey = "dom_" . $domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
         }, $this->domainCacheTTL);
@@ -773,7 +784,7 @@ class DomainNameAPI {
     {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
-        $domainCacheKey = "dom_" . $domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
         }, $this->domainCacheTTL);
@@ -795,7 +806,7 @@ class DomainNameAPI {
     {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
-        $domainCacheKey = "dom_" . $domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
         }, $this->domainCacheTTL);
@@ -827,7 +838,7 @@ class DomainNameAPI {
     {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
-        $domainCacheKey = "dom_" . $domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
         }, $this->domainCacheTTL);
@@ -859,7 +870,7 @@ class DomainNameAPI {
     public function getAuthCode($params = []) {
         $this->set_credentials();
         $domain       = trim($params["domain"]);
-        $domainCacheKey = "dom_".$domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX.$domain;
         $domainDetail =$this->rememberCache($domainCacheKey,function () use ($domain){
             return $this->api->getDetails($domain);
         },$this->domainCacheTTL);
@@ -873,7 +884,7 @@ class DomainNameAPI {
     public function sync($params = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
-        $OrderDetails =$this->rememberCache('sync_'.trim($domain),function () use ($domain){
+        $OrderDetails =$this->rememberCache(self::CACHE_KEY_SYNC_PREFIX.trim($domain),function () use ($domain){
             return $this->api->getDetails($domain);
         },rand((int)$this->domainCacheTTL*0.8,(int)$this->domainCacheTTL*2.5));
 
@@ -905,7 +916,7 @@ class DomainNameAPI {
     public function transfer_sync($params = []) {
         $this->set_credentials();
         $domain       = $params["domain"];
-        $OrderDetails =$this->rememberCache('sync_'.trim($domain),function () use ($domain){
+        $OrderDetails =$this->rememberCache(self::CACHE_KEY_SYNC_PREFIX.trim($domain),function () use ($domain){
             return $this->api->getDetails($domain);
         },rand((int)$this->domainCacheTTL*0.8,(int)$this->domainCacheTTL*2.5));
         if ($OrderDetails["result"] != "OK") {
@@ -954,7 +965,7 @@ class DomainNameAPI {
     public function get_info($params = []) {
         $this->set_credentials();
         $domain         = trim($params["domain"]);
-        $domainCacheKey = "dom_" . $domain;
+        $domainCacheKey = self::CACHE_KEY_DOMAIN_PREFIX . $domain;
         $domainDetail   = $this->rememberCache($domainCacheKey, function () use ($domain) {
             return $this->api->getDetails($domain);
         }, $this->domainCacheTTL);
@@ -981,7 +992,7 @@ class DomainNameAPI {
         $ns4      = $nameservers[3] ?? false;
 
 
-         $contacts  =$this->rememberCache('cnt_'.$domainCacheKey,function () use ($domain){
+         $contacts  =$this->rememberCache(self::CACHE_KEY_CONTACT_PREFIX.$domainCacheKey,function () use ($domain){
             return $this->api->GetContacts($domain);
         },$this->domainCacheTTL);
 
@@ -1106,7 +1117,7 @@ class DomainNameAPI {
         Helper::Load(["User"]);
 
        if ($invalidation==1){
-           $this->invalidateCache(["domainsdt","user_info_short_"]);
+           $this->invalidateCache([self::CACHE_KEY_DOMAINSDT_PREFIX,self::CACHE_KEY_USER_INFO_PREFIX]);
        }
 
         $listParams = [
@@ -1120,7 +1131,7 @@ class DomainNameAPI {
             $listParams['DomainName']=$search;
         }
 
-        $response = $this->rememberCache("domainsdt_" . $pageNumber . "_" . $pageLength.'_'.md5($search), function () use ($listParams) {
+        $response = $this->rememberCache(self::CACHE_KEY_DOMAINSDT_PREFIX . $pageNumber . "_" . $pageLength.'_'.md5($search), function () use ($listParams) {
             return $this->api->GetList($listParams);
         }, 180);
 
@@ -1143,7 +1154,7 @@ class DomainNameAPI {
             foreach ($response["data"]["Domains"] as $res) {
                 $user_data[$res["DomainName"]] = [];
 
-                $user_data[$res["DomainName"]]['user_info'] = $this->rememberCache("user_info_short_" . $res["DomainName"],
+                $user_data[$res["DomainName"]]['user_info'] = $this->rememberCache(self::CACHE_KEY_USER_INFO_PREFIX . $res["DomainName"],
                     function () use ($res) {
                         $is_imported = Models::$init->db->select("id,owner_id AS user_id")
                                                         ->from("users_products");
@@ -1317,7 +1328,7 @@ class DomainNameAPI {
             return false;
         }
 
-        $response = $this->rememberCache("tld_list", function () {
+        $response = $this->rememberCache(self::CACHE_KEY_TLD_LIST, function () {
             return $this->api->GetTldList(999);
         }, 180);
 
@@ -1357,7 +1368,7 @@ class DomainNameAPI {
         $this->set_credentials();
         $config = $this->config;
 
-        $response = $this->rememberCache("tld_list", function () {
+        $response = $this->rememberCache(self::CACHE_KEY_TLD_LIST, function () {
             return $this->api->GetTldList(999);
         }, 180);
 
@@ -1434,17 +1445,17 @@ class DomainNameAPI {
             }
 
             //calculate margin between current and cost as percentage
-            if($tld_obj['register_current']!==null && $tld_obj['register_cost']<>0){
-                $tld_obj['register_margin'] = floatval(number_format(($tld_obj['register_current'] - $tld_obj['register_cost']),2));
-                $tld_obj['register_margin_percent'] = intval(number_format((($tld_obj['register_margin'] / $tld_obj['register_cost']) * 100),0));
+            if (is_numeric($tld_obj['register_current']) && is_numeric($tld_obj['register_cost']) && $tld_obj['register_cost'] != 0) {
+                $tld_obj['register_margin'] = floatval(number_format(($tld_obj['register_current'] - $tld_obj['register_cost']), 2));
+                $tld_obj['register_margin_percent'] = intval(number_format((($tld_obj['register_margin'] / $tld_obj['register_cost']) * 100), 0));
             }
-            if($tld_obj['renewal_current']!==null && $tld_obj['renewal_cost']<>0){
-                $tld_obj['renewal_margin'] = floatval(number_format(($tld_obj['renewal_current'] - $tld_obj['renewal_cost']),2));
-                $tld_obj['renewal_margin_percent'] = intval(number_format((($tld_obj['renewal_margin'] / $tld_obj['renewal_cost']) * 100),0));
+            if (is_numeric($tld_obj['renewal_current']) && is_numeric($tld_obj['renewal_cost']) && $tld_obj['renewal_cost'] != 0) {
+                $tld_obj['renewal_margin'] = floatval(number_format(($tld_obj['renewal_current'] - $tld_obj['renewal_cost']), 2));
+                $tld_obj['renewal_margin_percent'] = intval(number_format((($tld_obj['renewal_margin'] / $tld_obj['renewal_cost']) * 100), 0));
             }
-            if($tld_obj['transfer_current']!==null && $tld_obj['transfer_cost']<>0){
-                $tld_obj['transfer_margin'] = floatval(number_format(($tld_obj['transfer_current'] - $tld_obj['transfer_cost']),2));
-                $tld_obj['transfer_margin_percent'] =intval(number_format(( ($tld_obj['transfer_margin'] / $tld_obj['transfer_cost']) * 100),0));
+            if (is_numeric($tld_obj['transfer_current']) && is_numeric($tld_obj['transfer_cost']) && $tld_obj['transfer_cost'] != 0) {
+                $tld_obj['transfer_margin'] = floatval(number_format(($tld_obj['transfer_current'] - $tld_obj['transfer_cost']), 2));
+                $tld_obj['transfer_margin_percent'] = intval(number_format((($tld_obj['transfer_margin'] / $tld_obj['transfer_cost']) * 100), 0));
             }
 
             $tld_obj['excluded'] =in_array($name,$excluded_tlds);
@@ -1460,7 +1471,7 @@ class DomainNameAPI {
     public function apply_import_tlds($selected_tlds=[]) {
         $this->set_credentials();
 
-        $response = $this->rememberCache("tld_list", function () {
+        $response = $this->rememberCache(self::CACHE_KEY_TLD_LIST, function () {
             return $this->api->GetTldList(999);
         }, 180);
         if ($response["result"] != "OK") {
@@ -1649,7 +1660,7 @@ class DomainNameAPI {
     {
         $this->set_credentials();
 
-        $response =$this->rememberCache("dna_user", function () {
+        $response =$this->rememberCache(self::CACHE_KEY_DNA_USER, function () {
             return $this->api->GetResellerDetails();
         }, 180);
 
@@ -1707,8 +1718,8 @@ class DomainNameAPI {
         }
 
         foreach ($invalidations as $k => $v) {
-             $cache_key = "DNA-" . substr($v, 0, 10);
-             Models::$init->db->delete("mod_dna_cache_elements")->where("name", "LIKE", "{$cache_key}%")->run();
+             $cache_key = self::CACHE_KEY_PREFIX . substr($v, 0, 10);
+             Models::$init->db->delete(self::CACHE_TABLE)->where("name", "LIKE", "{$cache_key}%")->run();
         }
 
     }
