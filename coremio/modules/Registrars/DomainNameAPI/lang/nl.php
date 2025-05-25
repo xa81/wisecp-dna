@@ -4,6 +4,7 @@ return [
     'name'                 => 'DomainNameAPI',
     'description'          => 'Met domainnameapi.com, een van de populaire domeinnaamregistrars, kunnen alle domeinnaamtransacties onmiddellijk worden uitgevoerd via de domein-API. Definieer hiervoor uw domainnameapi.com-clientaccountinformatie in de volgende velden.',
     'importTldButton'      => 'Meer dan 750 extensies importeren',
+    'hour'                 => "Uur",
     'fields'               => [
         'balance'       => "Saldo",
         'username'      => 'Reseller gebruikersnaam',
@@ -15,6 +16,9 @@ return [
         'cost-currency' => 'Kostenvaluta',
         'api-v2'        => "Gebruik de nieuwe versie",
         'resellerid'    => "Reseller ID",
+        'periodic-sync' => "Periodieke synchronisatie",
+        'sync-count'    => "Aantal synchronisaties per minuut",
+        'sync-delay'    => "Synchronisatiefrequentie",
     ],
     'desc'                 => [
         'privacyFee'    => "<br>Vraag om een vergoeding voor de Whois-beschermingsdienst.",
@@ -23,6 +27,9 @@ return [
         'importTld-1'   => 'Automatisch alle extensies importeren',
         'importTld-2'   => 'Alle domeinextensies en kosten die op de API zijn geregistreerd, worden collectief geïmporteerd.',
         'cost-currency' => '',
+        'periodic-sync' => "Het synchronisatie-evenement draait elke minuut, als je het activeert, verwerkt het volgens andere instellingen",
+        'sync-count'    => "Aantal domeinen dat moet worden verwerkt in synchronisatie, u kunt een hoog aantal kiezen als u veel domeinnamen heeft. U moet kleine aantallen kiezen om rate limits te voorkomen.",
+        'sync-delay'    => "De frequentie waarmee elke domeinnaam kan worden gesynchroniseerd. Het wordt aanbevolen om de frequentie lang te houden om rate limits te voorkomen. Als u het kort houdt, worden sommige domeinen mogelijk niet gesynchroniseerd.",
     ],
     'tabDetail'            => 'API -informatie',
     'tabImport'            => 'Importeren',

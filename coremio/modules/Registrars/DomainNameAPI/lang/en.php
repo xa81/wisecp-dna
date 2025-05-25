@@ -4,6 +4,7 @@ return [
     'name'                 => 'DomainNameAPI',
     'description'          => 'With Domainnameapi.com, one of the popular domain name registrars, all domain name transactions can be made instantaneously through the domain API. To do this, define your domainnameapi.com client account information in the following fields.',
     'importTldButton'      => 'Import Over 750 Extensions',
+    'hour'                 => "Hour",
     'fields'               => [
         'balance'       => "Balance",
         'username'      => 'Reseller Username',
@@ -15,6 +16,9 @@ return [
         'cost-currency' => 'Cost Currency',
         'api-v2'        => "Use the new version",
         'resellerid'    => "Reseller ID",
+        'periodic-sync' => "Periodic synchronization",
+        'sync-count'    => "Minute sync count",
+        'sync-delay'    => "Sync frequency",
     ],
     'desc'                 => [
         'privacyFee'    => '<br>Ask for a fee for whois protection service.',
@@ -23,6 +27,9 @@ return [
         'importTld-1'   => 'Automatically import all extensions',
         'importTld-2'   => 'All domain extensions and costs registered on the API will be imported collectively.',
         'cost-currency' => '',
+        'periodic-sync' => "The sync event runs every minute, if you activate it, it processes according to other settings",
+        'sync-count'    => "Number of domains to be processed in synchronization, you can select a high number if you have many domain names. You should select small numbers to avoid hitting rate limits.",
+        'sync-delay'    => "The frequency at which each domain name can be synchronized. It is recommended to keep the frequency long to avoid hitting rate limits. Also, if you keep it short, some domains may not be synchronized.",
     ],
     'tabDetail'            => 'API Information',
     'tabImport'            => 'Import',

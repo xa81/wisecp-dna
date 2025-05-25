@@ -7,7 +7,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * @package    coremio/modules/Registrars/DomainNameAPI
 
 
- * @version    1.17.19
+ * @version    1.18.0
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -18,7 +18,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 class DomainNameAPI {
 
 
-    public $version = "1.17.19";
+    public $version = "1.18.0";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -29,9 +29,19 @@ class DomainNameAPI {
     private $order   = [];
     private $username, $password, $tmode;
     private $domainCacheTTL= 1024;
+    public  $periodicSync = false;
+    private $syncCount=5;
+    public $syncCountList=[5,10,15,20];
+    private $syncDelay=84600; // 24 hours
+    public $syncDelayList= [
+        43200, // 12 hours
+        86400, // 24 hours
+        172800, // 48 hours
+        259200, // 72 hours
+    ];
 
     const DEFAULT_CACHE_TTL = 3600;
-    const CACHE_KEY_PREFIX = 'DNA-';
+    const CACHE_KEY_PREFIX    = 'DNA-';
     const CACHE_TABLE = 'mod_dna_cache_elements';
     const QUERY_CACHE_TTL = 300;
     const LOGGING_CONFIG_NAME = 'Registrars';
@@ -82,6 +92,18 @@ class DomainNameAPI {
         $this->username = $username;
         $this->password = $password;
         $this->tmode    = $tmode;
+
+
+        if(isset($this->config["settings"]["periodic-sync"])){
+            $this->periodicSync = $this->config["settings"]["periodic-sync"];
+        }
+
+        if(isset($this->config["settings"]["sync-count"])){
+            $this->syncCount = (int)$this->config["settings"]["sync-count"];
+        }
+        if(isset($this->config["settings"]["sync-delay"])){
+            $this->syncDelay = (int)$this->config["settings"]["sync-delay"];
+        }
 
     }
 
@@ -1322,6 +1344,114 @@ class DomainNameAPI {
         return $results;
     }
 
+    public function syncronisation(){
+
+        if($this->periodicSync===false){
+            return null;
+        }
+
+        foreach(range(0,$this->syncCount) as $syncKey){
+
+            sleep(2);
+
+            $product = $this->findNextDomain();
+
+            if (!$product) {
+                return null;
+            }
+
+            $domain        = $product["name"];
+            $domainOptions = Utility::jdecode($product["options"], true);
+
+            $domain_parse = Utility::domain_parser("http://" . $domain);
+            $sld          = $domain_parse["host"];
+            $tld          = $domain_parse["tld"];
+
+            Modules::save_log(self::LOGGING_CONFIG_NAME, __CLASS__, "Syncronisation", [
+                'domain'   => $domain,
+                'start_at' => date('Y-m-d H:i:s'),
+            ], []);
+
+            $info = $this->get_info([
+                'domain' => $domain,
+                'name'   => $sld,
+                'tld'    => $tld,
+            ]);
+
+            $options = [
+                "domain"       => $domain,
+                "name"         => $sld,
+                "tld"          => $tld,
+                "dns_manage"   => true,
+                "whois_manage" => true,
+                "next_check"   => time()+$this->syncDelay
+            ];
+
+            if(isset($info["transferlock"])){
+                $options["transferlock"] = $info["transferlock"];
+            }
+
+            if(isset($info["cns"])){
+                $options['cns_list'] = $info["cns"];
+            }
+            if(isset($info["cns"])){
+                $options['whois'] = $info["whois"];
+            }
+
+            if (isset($info["whois_privacy"]) && $info["whois_privacy"]) {
+                $options["whois_privacy"] = $info["whois_privacy"]["status"] == "enable";
+                if (isset($info["whois_privacy"]["end_time"]) && $info["whois_privacy"]["end_time"]) {
+                    $wprivacy_endtime                 = $info["whois_privacy"]["end_time"];
+                    $options["whois_privacy_endtime"] = $wprivacy_endtime;
+                }
+            }
+
+            if (isset($info["ns1"]) && $info["ns1"]) {
+                $options["ns1"] = $info["ns1"];
+            }
+            if (isset($info["ns2"]) && $info["ns2"]) {
+                $options["ns2"] = $info["ns2"];
+            }
+            if (isset($info["ns3"]) && $info["ns3"]) {
+                $options["ns3"] = $info["ns3"];
+            }
+            if (isset($info["ns4"]) && $info["ns4"]) {
+                $options["ns4"] = $info["ns4"];
+            }
+
+            foreach ($options as $k => $v) {
+                $domainOptions[$k] = $v;
+            }
+
+            $domainOptions = Utility::jencode($domainOptions);
+
+            Models::$init->db->update("users_products", [
+                'options' => $domainOptions,
+            ])
+            ->where("id", '=', $product['id'])
+            ->save();
+
+        }
+    }
+
+    private function findNextDomain()
+    {
+        $stmt = Models::$init->db->select("id,name,options")->from("users_products");
+
+        $stmt->where("status", "=", "active", "&&");
+        $stmt->where("module", "=", "DomainNameApi", "&&");
+        $stmt->where("type", "=", "domain" , "&&");
+        $stmt->where("(");
+        $stmt->where('JSON_EXTRACT(options, "$.next_check")', "IS NULL", "", "||");
+        $stmt->where('CAST(JSON_UNQUOTE(JSON_EXTRACT(options, "$.next_check")) AS UNSIGNED)', "<", time());
+        $stmt->where(")", "", "");
+
+        $stmt->order_by("id DESC");
+        $stmt->limit(1);
+
+        return $stmt->build() ? $stmt->getAssoc() : false;
+    }
+
     public function cost_prices($type = 'domain')
     {
         $this->set_credentials();
@@ -1727,3 +1857,11 @@ class DomainNameAPI {
     }
 
 }
+
+Hook::add("PerMinuteCronJob", 1, function () {
+
+    Modules::Load("Registrars", 'DomainNameAPI');
+    $module = new DomainNameAPI();
+    $module->syncronisation();
+
+});
