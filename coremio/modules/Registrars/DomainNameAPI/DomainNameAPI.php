@@ -1394,7 +1394,7 @@ class DomainNameAPI {
                 "tld"          => $tld,
                 "dns_manage"   => true,
                 "whois_manage" => true,
-                "next_check"   => time()+ abs($totalDomains/$this->syncCount) + $this->syncDelay
+                "next_check"   => time()+ abs($totalDomains/$this->syncCount*60) + $this->syncDelay
             ];
 
             if(isset($info["transferlock"])){
