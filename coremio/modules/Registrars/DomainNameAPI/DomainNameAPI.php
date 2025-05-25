@@ -7,7 +7,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * @package    coremio/modules/Registrars/DomainNameAPI
 
 
- * @version    1.18.0
+ * @version    1.18.1
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -18,7 +18,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 class DomainNameAPI {
 
 
-    public $version = "1.18.0";
+    public $version = "1.18.1";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -1349,6 +1349,16 @@ class DomainNameAPI {
         if($this->periodicSync===false){
             return null;
         }
+        
+        $totalDomains = Models::$init->db->select("COUNT(id) AS total")->from("users_products")
+            ->where("status", "=", "active", "&&")
+            ->where("module", "=", "DomainNameApi", "&&")
+            ->where("type", "=", "domain")
+            ->build() ? Models::$init->db->getObject()->total : 0;
+        
+        if ($totalDomains <= 0) {
+            $totalDomains = 1000; 
+        }
 
         foreach(range(0,$this->syncCount) as $syncKey){
 
@@ -1384,7 +1394,7 @@ class DomainNameAPI {
                 "tld"          => $tld,
                 "dns_manage"   => true,
                 "whois_manage" => true,
-                "next_check"   => time()+$this->syncDelay
+                "next_check"   => time()+ abs($totalDomains/$this->syncCount) + $this->syncDelay
             ];
 
             if(isset($info["transferlock"])){
