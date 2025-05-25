@@ -4,6 +4,7 @@ return [
     'name'                 => 'DomainNameAPI',
     'description'          => "Popüler alan adı tescil firmalarından biri olan domainnameapi.com ile domain api üzerinden tüm alan adı işlemlerini anlık olarak sağlayabilirsiniz. Bunun için domainnameapi.com müşteri hesabı bilgilerinizi aşağıdaki alanlara tanımlayınız.",
     'importTldButton'      => "750+ Uzantıyı İçeri Aktar",
+    'hour'                 => "Saat",
     'fields'               => [
         'balance'       => "Bakiye",
         'username'      => "Bayi Kullanıcı Adınız",
@@ -15,6 +16,9 @@ return [
         'cost-currency' => "Maliyet Para Birimi",
         'api-v2'        => "Yeni versiyonu kullan",
         'resellerid'    => "Reseller ID",
+        'periodic-sync' => "Periodik senkronizasyon",
+        'sync-count'    => "Dakikalık senkron sayısı",
+        'sync-delay'    => "Senkron sıklığı",
     ],
     'desc'                 => [
         'privacyFee'    => "<br>Müşterilerinizden whois bilgisi gizlemek için ücret talep edebilirsiniz.",
@@ -23,6 +27,9 @@ return [
         'importTld-1'   => "Api üzerinde kayıtlı tüm uzantıları otomatik olarak içeri aktar.",
         'importTld-2'   => "Api üzerinde kayıtlı bulunan tüm alan adı uzantıları ve maliyetleri toplu olarak içeri aktarılacaktır.",
         'cost-currency' => '',
+        'periodic-sync' => "Her dakika senkron eventi çalışır, eğer aktifleştirirseniz diğer ayarlara göre işlem yapar",
+        'sync-count'    => "Senkronizasyonda işlenecek domain sayısı, alan adınız çoksa yüksek seçebilirsiniz. Rate limite takılmamak için küçük sayılar seçmelisiniz.",
+        'sync-delay'    => "Her bir alan adının senkron edilebilme sıklığı. Ratelimite takılmamak için sıklığı uzun tutmanız önerilir. Ayrıca kısa tutarsanız bazı domainlri senronlama olmayabilir.",
     ],
     'tabDetail'            => 'Api Bilgileri',
     'tabImport'            => "Alan Adlarını İçeri Aktar",

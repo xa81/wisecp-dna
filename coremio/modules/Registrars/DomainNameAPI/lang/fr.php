@@ -4,6 +4,7 @@ return [
     'name'                 => 'DomainNameAPI',
     'description'          => "Avec Domainnameapi.com, l'un des registraires de noms de domaine populaires, toutes les transactions de noms de domaine peuvent être effectuées instantanément via l'API de domaine. Pour ce faire, définissez les informations de votre compte client domainnameapi.com dans les champs suivants.",
     'importTldButton'      => 'Importer plus de 750 extensions',
+    'hour'                 => "Heure",
     'fields'               => [
         'balance'       => "Solde",
         'username'      => 'Nom d\'utilisateur du revendeur',
@@ -15,6 +16,9 @@ return [
         'cost-currency' => 'Devise des coûts',
         'api-v2'        => "Utiliser la nouvelle version",
         'resellerid'    => "ID du revendeur",
+        'periodic-sync' => "Synchronisation périodique",
+        'sync-count'    => "Nombre de synchronisations par minute",
+        'sync-delay'    => "Fréquence de synchronisation",
     ],
     'desc'                 => [
         'privacyFee'    => "<br>Demandez des frais pour le service de protection Whois.",
@@ -23,6 +27,9 @@ return [
         'importTld-1'   => 'Importer automatiquement toutes les extensions',
         'importTld-2'   => 'Toutes les extensions de domaine et les coûts enregistrés sur l\'API seront importés collectivement.',
         'cost-currency' => '',
+        'periodic-sync' => "L'événement de synchronisation s'exécute chaque minute, si vous l'activez, il traite selon les autres paramètres",
+        'sync-count'    => "Nombre de domaines à traiter dans la synchronisation, vous pouvez sélectionner un nombre élevé si vous avez de nombreux noms de domaine. Vous devez sélectionner de petits nombres pour éviter d'atteindre les limites de taux.",
+        'sync-delay'    => "La fréquence à laquelle chaque nom de domaine peut être synchronisé. Il est recommandé de garder la fréquence longue pour éviter d'atteindre les limites de taux. De plus, si vous la gardez courte, certains domaines peuvent ne pas être synchronisés.",
     ],
     'tabDetail'            => 'Informations sur l\'API',
     'tabImport'            => 'Importer',

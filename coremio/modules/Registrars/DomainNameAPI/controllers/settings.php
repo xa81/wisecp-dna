@@ -27,6 +27,9 @@ $adp            = Filter::POST("adp", "numbers");
 $cost_cid       = Filter::POST("cost-currency", "numbers");
 $exclude        = Filter::POST("exclude", "hclear");
 $api_version    = Filter::POST("api-version", "hclear");
+$sync_count     = Filter::POST("sync-count", "numbers");
+$sync_delay     = Filter::POST("sync-delay", "numbers");
+$periodic_sync  = Filter::POST("periodic-sync", "numbers");
 
 $sets = [];
 
@@ -65,6 +68,26 @@ if ($cost_cid !== false && (!isset($config["settings"]["cost-currency"]) || (int
 if ($exclude !== false && $exclude != $config["settings"]["exclude"]) {
     $sets["settings"]["exclude"] = $exclude;
 }
+
+if ($periodic_sync !== false && (!isset($config["settings"]["periodic-sync"]) || (int)$periodic_sync != $config["settings"]["periodic-sync"])) {
+    $sets["settings"]["periodic-sync"] = (int)$periodic_sync;
+}
+
+if ($sync_count !== false && (!isset($config["settings"]["sync-count"]) || (int)$sync_count != $config["settings"]["sync-count"])) {
+    if(!in_array($sync_count,$module->syncCountList)){
+        $sync_count = $module->syncCountList[0];
+    }
+    $sets["settings"]["sync-count"] = (int)$sync_count;
+}
+
+if ($sync_delay !== false && (!isset($config["settings"]["sync-delay"]) || (int)$sync_delay != $config["settings"]["sync-delay"])) {
+    if(!in_array($sync_delay,$module->syncDelayList)){
+        $sync_delay = $module->syncDelayList[0];
+    }
+    $sets["settings"]["sync-delay"] = (int)$sync_delay;
+}
+
+
 
 
 $profit_rate = Filter::POST("profit-rate", "amount");

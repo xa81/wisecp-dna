@@ -5,6 +5,9 @@ $LANG   = $module->lang;
 $CONFIG = $module->config;
 Helper::Load("Money");
 $soap_exists = class_exists("SoapClient");
+$periodicSync=$module->periodicSync;
+$syncCountList=$module->syncCountList;
+$syncDelayList=$module->syncDelayList;
 ?>
 
 
@@ -117,6 +120,50 @@ $soap_exists = class_exists("SoapClient");
                 <div class="yuzde30"><?php echo __("admin/products/profit-rate-for-registrar-module"); ?></div>
                 <div class="yuzde70">
                     <input type="text" name="profit-rate" value="<?php echo Config::get("options/domain-profit-rate"); ?>" style="width: 50px;" onkeypress='return event.charCode==44 || event.charCode==46 || event.charCode>= 48 &&event.charCode<= 57'>
+                </div>
+            </div>
+
+            <div class="formcon">
+                <div class="yuzde30"><?php echo $LANG["fields"]["periodic-sync"]; ?></div>
+                <div class="yuzde70">
+                    <input<?php echo isset($CONFIG["settings"]["periodic-sync"]) && $CONFIG["settings"]["periodic-sync"] ? ' checked' : ''; ?> type="checkbox" name="periodic-sync" value="1" id="DomainNameAPI_periodic-sync" class="checkbox-custom">
+                    <label class="checkbox-custom-label" for="DomainNameAPI_periodic-sync">
+                        <span class="kinfo"><?php echo $LANG["desc"]["periodic-sync"]; ?></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="formcon" id="cost_currency_wrap">
+                <div class="yuzde30"><?php echo $LANG["fields"]["sync-count"]; ?></div>
+                <div class="yuzde70">
+                    <select name="sync-count" style="width:200px;">
+                        <?php
+                        foreach ($syncCountList as $count) {
+                            ?>
+                            <option<?php echo $count == $CONFIG["settings"]["sync-count"] ? ' selected' : ''; ?> value="<?php echo $count; ?>"><?php echo $count; ?></option>
+                            <?php
+                        }
+                        ?>
+                    </select>
+                    <br>
+                    <span class="kinfo"><?php echo $LANG["desc"]["sync-count"]; ?></span>
+                </div>
+            </div>
+
+            <div class="formcon" id="cost_currency_wrap">
+                <div class="yuzde30"><?php echo $LANG["fields"]["sync-delay"]; ?></div>
+                <div class="yuzde70">
+                    <select name="sync-delay" style="width:200px;">
+                        <?php
+                        foreach ($syncDelayList as $delay) {
+                            ?>
+                            <option<?php echo $delay == $CONFIG["settings"]["sync-delay"] ? ' selected' : ''; ?> value="<?php echo $delay; ?>"><?php echo abs($delay/60/60); ?> <?php echo $LANG["hour"]; ?></option>
+                            <?php
+                        }
+                        ?>
+                    </select>
+                    <br>
+                    <span class="kinfo"><?php echo $LANG["desc"]["sync-delay"]; ?></span>
                 </div>
             </div>
 

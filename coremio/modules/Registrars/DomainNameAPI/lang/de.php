@@ -4,6 +4,7 @@ return [
     'name'                 => 'DomainNameAPI',
     'description'          => "Mit Domainnameapi.com, einem der beliebtesten Domainnamen-Registrare, können alle Domainnamen-Transaktionen sofort über die Domain-API durchgeführt werden. Definieren Sie dazu in den folgenden Feldern Ihre Domainnameapi.com-Kundenkontoinformationen.",
     'importTldButton'      => 'Über 750 Erweiterungen importieren',
+    'hour'                 => "Stunde",
     'fields'               => [
         'balance'       => "Saldo",
         'username'      => 'Reseller-Benutzername',
@@ -15,6 +16,9 @@ return [
         'cost-currency' => 'Kostenwährung',
         'api-v2'        => "Verwende die neue Version",
         'resellerid'    => "Wiederverkäufer-ID",
+        'periodic-sync' => "Periodische Synchronisierung",
+        'sync-count'    => "Minütliche Synchronisierungsanzahl",
+        'sync-delay'    => "Synchronisierungsfrequenz",
     ],
     'desc'                 => [
         'privacyFee'    => "<br>Fordern Sie eine Gebühr für den Whois-Schutzdienst an.",
@@ -23,6 +27,9 @@ return [
         'importTld-1'   => 'Importieren Sie automatisch alle Erweiterungen',
         'importTld-2'   => 'Alle in der API registrierten Domain-Endungen und Kosten werden gemeinsam importiert.',
         'cost-currency' => '',
+        'periodic-sync' => "Das Synchronisierungsereignis läuft jede Minute, wenn Sie es aktivieren, verarbeitet es gemäß anderen Einstellungen",
+        'sync-count'    => "Anzahl der zu synchronisierenden Domains, Sie können eine hohe Zahl wählen, wenn Sie viele Domainnamen haben. Sie sollten kleine Zahlen wählen, um Rate-Limits zu vermeiden.",
+        'sync-delay'    => "Die Häufigkeit, mit der jeder Domainname synchronisiert werden kann. Es wird empfohlen, die Häufigkeit lang zu halten, um Rate-Limits zu vermeiden. Wenn Sie sie kurz halten, werden einige Domains möglicherweise nicht synchronisiert.",
     ],
     'tabDetail'            => 'API-Informationen',
     'tabImport'            => 'Importieren',
