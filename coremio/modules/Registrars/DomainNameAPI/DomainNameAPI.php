@@ -7,7 +7,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * @package    coremio/modules/Registrars/DomainNameAPI
 
 
- * @version    1.18.1
+ * @version    1.18.2
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -18,7 +18,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 class DomainNameAPI {
 
 
-    public $version = "1.18.1";
+    public $version = "1.18.2";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -1646,6 +1646,10 @@ class DomainNameAPI {
 
             $name = Utility::strtolower(trim($row["tld"]));
 
+            $maxPeriod = $row['maxperiod'];
+            if($row["pricing"]["registration"][1] < $row["pricing"]["registration"][2]/2){
+                $maxPeriod = 1;
+            }
 
             $api_cost_prices = [
                 'register' => number_format(($row["pricing"]["registration"][1] ?? 0), 2, '.', ''),
@@ -1701,30 +1705,31 @@ class DomainNameAPI {
                     'renewal_cost'  => $renewal_cost,
                     'transfer_cost' => $transfer_cost,
                     'module'        => $module,
+                    'max_years'     => $maxPeriod
                 ]);
 
                 Models::$init->db->update("prices", [
                     'amount' => $register_sale,
                     'cid'    => $tld_cid,
                 ])
-                                 ->where("id", "=", $reg_price["id"])
-                                 ->save();
+                 ->where("id", "=", $reg_price["id"])
+                 ->save();
 
 
                 Models::$init->db->update("prices", [
                     'amount' => $renewal_sale,
                     'cid'    => $tld_cid,
                 ])
-                                 ->where("id", "=", $ren_price["id"])
-                                 ->save();
+                 ->where("id", "=", $ren_price["id"])
+                 ->save();
 
 
                 Models::$init->db->update("prices", [
                     'amount' => $transfer_sale,
                     'cid'    => $tld_cid,
                 ])
-                                 ->where("id", "=", $tra_price["id"])
-                                 ->save();
+                 ->where("id", "=", $tra_price["id"])
+                 ->save();
 
             } else {
 
@@ -1757,6 +1762,7 @@ class DomainNameAPI {
                     'renewal_cost'  => $renewal_cost,
                     'transfer_cost' => $transfer_cost,
                     'module'        => $module,
+                    'max_years'     => $maxPeriod,
                 ]);
 
                 if ($insert) {
