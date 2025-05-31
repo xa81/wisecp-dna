@@ -7,7 +7,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * @package    coremio/modules/Registrars/DomainNameAPI
 
 
- * @version    1.18.2
+ * @version    1.18.3
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -18,7 +18,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 class DomainNameAPI {
 
 
-    public $version = "1.18.2";
+    public $version = "1.18.3";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -1416,19 +1416,14 @@ class DomainNameAPI {
                 }
             }
 
-            if (isset($info["ns1"]) && $info["ns1"]) {
-                $options["ns1"] = $info["ns1"];
+            foreach (range(1,5) as $k => $v) {
+                if (isset($info["ns{$v}"]) && $info["ns{$v}"]) {
+                    $options["ns{$v}"] = $info["ns{$v}"];
+                }else{
+                    unset($domainOptions["ns{$v}"]);
+                }
             }
-            if (isset($info["ns2"]) && $info["ns2"]) {
-                $options["ns2"] = $info["ns2"];
-            }
-            if (isset($info["ns3"]) && $info["ns3"]) {
-                $options["ns3"] = $info["ns3"];
-            }
-            if (isset($info["ns4"]) && $info["ns4"]) {
-                $options["ns4"] = $info["ns4"];
-            }
-
+            
             foreach ($options as $k => $v) {
                 $domainOptions[$k] = $v;
             }

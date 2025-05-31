@@ -3,7 +3,7 @@
 return [
     'meta'     => [
         'name'    => 'DomainNameAPI',
-        'version' => '1.18.2',
+        'version' => '1.18.3',
         'logo'    => 'logo.png',
     ],
     'settings' => [
