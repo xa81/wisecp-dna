@@ -7,7 +7,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * @package    coremio/modules/Registrars/DomainNameAPI
 
 
- * @version    1.18.1
+ * @version    1.18.3
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -18,7 +18,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 class DomainNameAPI {
 
 
-    public $version = "1.18.1";
+    public $version = "1.18.3";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -1416,19 +1416,14 @@ class DomainNameAPI {
                 }
             }
 
-            if (isset($info["ns1"]) && $info["ns1"]) {
-                $options["ns1"] = $info["ns1"];
+            foreach (range(1,5) as $k => $v) {
+                if (isset($info["ns{$v}"]) && $info["ns{$v}"]) {
+                    $options["ns{$v}"] = $info["ns{$v}"];
+                }else{
+                    unset($domainOptions["ns{$v}"]);
+                }
             }
-            if (isset($info["ns2"]) && $info["ns2"]) {
-                $options["ns2"] = $info["ns2"];
-            }
-            if (isset($info["ns3"]) && $info["ns3"]) {
-                $options["ns3"] = $info["ns3"];
-            }
-            if (isset($info["ns4"]) && $info["ns4"]) {
-                $options["ns4"] = $info["ns4"];
-            }
-
+            
             foreach ($options as $k => $v) {
                 $domainOptions[$k] = $v;
             }
@@ -1646,6 +1641,10 @@ class DomainNameAPI {
 
             $name = Utility::strtolower(trim($row["tld"]));
 
+            $maxPeriod = $row['maxperiod'];
+            if($row["pricing"]["registration"][1] < $row["pricing"]["registration"][2]/2){
+                $maxPeriod = 1;
+            }
 
             $api_cost_prices = [
                 'register' => number_format(($row["pricing"]["registration"][1] ?? 0), 2, '.', ''),
@@ -1701,30 +1700,31 @@ class DomainNameAPI {
                     'renewal_cost'  => $renewal_cost,
                     'transfer_cost' => $transfer_cost,
                     'module'        => $module,
+                    'max_years'     => $maxPeriod
                 ]);
 
                 Models::$init->db->update("prices", [
                     'amount' => $register_sale,
                     'cid'    => $tld_cid,
                 ])
-                                 ->where("id", "=", $reg_price["id"])
-                                 ->save();
+                 ->where("id", "=", $reg_price["id"])
+                 ->save();
 
 
                 Models::$init->db->update("prices", [
                     'amount' => $renewal_sale,
                     'cid'    => $tld_cid,
                 ])
-                                 ->where("id", "=", $ren_price["id"])
-                                 ->save();
+                 ->where("id", "=", $ren_price["id"])
+                 ->save();
 
 
                 Models::$init->db->update("prices", [
                     'amount' => $transfer_sale,
                     'cid'    => $tld_cid,
                 ])
-                                 ->where("id", "=", $tra_price["id"])
-                                 ->save();
+                 ->where("id", "=", $tra_price["id"])
+                 ->save();
 
             } else {
 
@@ -1757,6 +1757,7 @@ class DomainNameAPI {
                     'renewal_cost'  => $renewal_cost,
                     'transfer_cost' => $transfer_cost,
                     'module'        => $module,
+                    'max_years'     => $maxPeriod,
                 ]);
 
                 if ($insert) {
