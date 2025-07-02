@@ -199,7 +199,7 @@ $syncDelayList=$module->syncDelayList;
                 </div>
             </div>
 
-            <div class="formcon" style="display: none;">
+            <div class="formcon">
                 <div class="yuzde30"><?php echo $LANG["fields"]["test-mode"]; ?></div>
                 <div class="yuzde70">
                     <input<?php echo $CONFIG["settings"]["test-mode"] ? ' checked' : ''; ?> type="checkbox" name="test-mode" value="1" id="DomainNameAPI_test-mode" class="checkbox-custom">
