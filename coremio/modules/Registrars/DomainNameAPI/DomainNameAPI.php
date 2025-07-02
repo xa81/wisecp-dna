@@ -7,7 +7,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * @package    coremio/modules/Registrars/DomainNameAPI
 
 
- * @version    1.18.3
+ * @version    1.18.4
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -18,7 +18,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 class DomainNameAPI {
 
 
-    public $version = "1.18.3";
+    public $version = "1.18.4";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -139,7 +139,7 @@ class DomainNameAPI {
         if ($this->api instanceof DomainNameAPI_PHPLibrary) {
             return $this->api;
         }
-        $this->api = new DomainNameAPI_PHPLibrary($this->username, $this->password);
+        $this->api = new DomainNameAPI_PHPLibrary($this->username, $this->password,$this->tmode);
     }
 
 
@@ -155,9 +155,9 @@ class DomainNameAPI {
     private function setConfig($username, $password, $tmode) {
         $this->config["settings"]["username"]  = $username;
         $this->config["settings"]["password"]  = $password;
-        //$this->config["settings"]["test-mode"] = $tmode;
+        $this->config["settings"]["test-mode"] = $tmode;
 
-        $this->api = new DomainNameAPI_PHPLibrary($username, $password);
+        $this->api = new DomainNameAPI_PHPLibrary($username, $password,$tmode);
     }
 
     /**
