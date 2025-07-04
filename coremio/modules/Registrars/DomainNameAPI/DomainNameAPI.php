@@ -7,7 +7,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * @package    coremio/modules/Registrars/DomainNameAPI
 
 
- * @version    1.18.4
+ * @version    1.18.5
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -18,7 +18,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 class DomainNameAPI {
 
 
-    public $version = "1.18.4";
+    public $version = "1.18.5";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -1815,7 +1815,7 @@ class DomainNameAPI {
     {
         // Güvenli bir hash algoritması kullanın
         $keyUtf = preg_replace('/[^A-Za-z0-9\-]/', '',  $key);
-        $cache_key = self::CACHE_KEY_PREFIX . substr($keyUtf, 0, 10) . '_' . md5($this->username .'-'. $this->password . '-' . $key);
+        $cache_key = self::CACHE_KEY_PREFIX . substr($keyUtf, 0, 10) . '_' . md5($this->username .'-'. $this->password . '-'.($this->tmode?'test':'') . $key);
 
         $cache_object = Models::$init->db->select("name,content,updated_at")
                                          ->from(self::CACHE_TABLE)
