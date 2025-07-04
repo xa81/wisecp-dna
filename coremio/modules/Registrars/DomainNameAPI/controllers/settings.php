@@ -49,7 +49,7 @@ if ($whidden_curr !== false && (int)$whidden_curr != $config["settings"]["whidde
     $sets["settings"]["whidden-currency"] = (int)$whidden_curr;
 }
 
-if ($test_mode !== false && (int)$test_mode != $config["settings"]["test-mode"]) {
+if ((int)$test_mode != $config["settings"]["test-mode"]) {
     $sets["settings"]["test-mode"] = (int)$test_mode;
 }
 
