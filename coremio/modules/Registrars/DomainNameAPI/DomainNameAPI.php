@@ -7,7 +7,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * @package    coremio/modules/Registrars/DomainNameAPI
 
 
- * @version    1.18.6
+ * @version    1.18.7
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -18,7 +18,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 class DomainNameAPI {
 
 
-    public $version = "1.18.6";
+    public $version = "1.18.7";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -1319,7 +1319,7 @@ class DomainNameAPI {
                 "cdate"        => $start_date,
                 "duedate"      => $end_date,
                 "renewaldate"  => DateManager::Now(),
-                "module"       => $config["meta"]["name"],
+                "module"       => 'DomainNameAPI',
                 "options"      => Utility::jencode($options),
                 "unread"       => 1,
             ];
@@ -1351,13 +1351,12 @@ class DomainNameAPI {
         }
         
         $totalDomains = Models::$init->db->select("COUNT(id) AS total")->from("users_products")
-            ->where("status", "=", "active", "&&")
             ->where("module", "=", "DomainNameApi", "&&")
             ->where("type", "=", "domain")
             ->build() ? Models::$init->db->getObject()->total : 0;
         
         if ($totalDomains <= 0) {
-            $totalDomains = 1000; 
+            $totalDomains = 2000;
         }
 
         foreach(range(0,$this->syncCount) as $syncKey){
