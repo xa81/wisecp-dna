@@ -1387,53 +1387,55 @@ class DomainNameAPI {
                 'tld'    => $tld,
             ]);
 
-            $options = [
-                "domain"       => $domain,
-                "name"         => $sld,
-                "tld"          => $tld,
-                "dns_manage"   => true,
-                "whois_manage" => true,
-                "next_check"   => time()+ abs($totalDomains/$this->syncCount*60) + $this->syncDelay
-            ];
+            if(isset($info['transferlock'])) {
+                $options = [
+                    "domain"       => $domain,
+                    "name"         => $sld,
+                    "tld"          => $tld,
+                    "dns_manage"   => true,
+                    "whois_manage" => true,
+                    "next_check"   => time() + abs($totalDomains / $this->syncCount * 60) + $this->syncDelay
+                ];
 
-            if(isset($info["transferlock"])){
-                $options["transferlock"] = $info["transferlock"];
-            }
-
-            if(isset($info["cns"])){
-                $options['cns_list'] = $info["cns"];
-            }
-            if(isset($info["cns"])){
-                $options['whois'] = $info["whois"];
-            }
-
-            if (isset($info["whois_privacy"]) && $info["whois_privacy"]) {
-                $options["whois_privacy"] = $info["whois_privacy"]["status"] == "enable";
-                if (isset($info["whois_privacy"]["end_time"]) && $info["whois_privacy"]["end_time"]) {
-                    $wprivacy_endtime                 = $info["whois_privacy"]["end_time"];
-                    $options["whois_privacy_endtime"] = $wprivacy_endtime;
+                if (isset($info["transferlock"])) {
+                    $options["transferlock"] = $info["transferlock"];
                 }
-            }
 
-            foreach (range(1,5) as $k => $v) {
-                if (isset($info["ns{$v}"]) && $info["ns{$v}"]) {
-                    $options["ns{$v}"] = $info["ns{$v}"];
-                }else{
-                    unset($domainOptions["ns{$v}"]);
+                if (isset($info["cns"])) {
+                    $options['cns_list'] = $info["cns"];
                 }
-            }
-            
-            foreach ($options as $k => $v) {
-                $domainOptions[$k] = $v;
-            }
+                if (isset($info["cns"])) {
+                    $options['whois'] = $info["whois"];
+                }
 
-            $domainOptions = Utility::jencode($domainOptions);
+                if (isset($info["whois_privacy"]) && $info["whois_privacy"]) {
+                    $options["whois_privacy"] = $info["whois_privacy"]["status"] == "enable";
+                    if (isset($info["whois_privacy"]["end_time"]) && $info["whois_privacy"]["end_time"]) {
+                        $wprivacy_endtime                 = $info["whois_privacy"]["end_time"];
+                        $options["whois_privacy_endtime"] = $wprivacy_endtime;
+                    }
+                }
 
-            Models::$init->db->update("users_products", [
-                'options' => $domainOptions,
-            ])
-            ->where("id", '=', $product['id'])
-            ->save();
+                foreach (range(1, 5) as $k => $v) {
+                    if (isset($info["ns{$v}"]) && $info["ns{$v}"]) {
+                        $options["ns{$v}"] = $info["ns{$v}"];
+                    } else {
+                        unset($domainOptions["ns{$v}"]);
+                    }
+                }
+
+                foreach ($options as $k => $v) {
+                    $domainOptions[$k] = $v;
+                }
+
+                $domainOptions = Utility::jencode($domainOptions);
+
+                Models::$init->db->update("users_products", [
+                        'options' => $domainOptions,
+                    ])
+                 ->where("id", '=', $product['id'])
+                 ->save();
+            }
 
         }
     }
