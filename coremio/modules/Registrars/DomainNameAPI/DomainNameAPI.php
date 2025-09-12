@@ -7,7 +7,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * @package    coremio/modules/Registrars/DomainNameAPI
 
 
- * @version    1.18.6
+ * @version    1.18.7
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -18,7 +18,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 class DomainNameAPI {
 
 
-    public $version = "1.18.6";
+    public $version = "1.18.7";
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
@@ -1319,7 +1319,7 @@ class DomainNameAPI {
                 "cdate"        => $start_date,
                 "duedate"      => $end_date,
                 "renewaldate"  => DateManager::Now(),
-                "module"       => $config["meta"]["name"],
+                "module"       => 'DomainNameAPI',
                 "options"      => Utility::jencode($options),
                 "unread"       => 1,
             ];
@@ -1351,13 +1351,12 @@ class DomainNameAPI {
         }
         
         $totalDomains = Models::$init->db->select("COUNT(id) AS total")->from("users_products")
-            ->where("status", "=", "active", "&&")
             ->where("module", "=", "DomainNameApi", "&&")
             ->where("type", "=", "domain")
             ->build() ? Models::$init->db->getObject()->total : 0;
         
         if ($totalDomains <= 0) {
-            $totalDomains = 1000; 
+            $totalDomains = 2000;
         }
 
         foreach(range(0,$this->syncCount) as $syncKey){
@@ -1388,53 +1387,55 @@ class DomainNameAPI {
                 'tld'    => $tld,
             ]);
 
-            $options = [
-                "domain"       => $domain,
-                "name"         => $sld,
-                "tld"          => $tld,
-                "dns_manage"   => true,
-                "whois_manage" => true,
-                "next_check"   => time()+ abs($totalDomains/$this->syncCount*60) + $this->syncDelay
-            ];
+            if(isset($info['transferlock'])) {
+                $options = [
+                    "domain"       => $domain,
+                    "name"         => $sld,
+                    "tld"          => $tld,
+                    "dns_manage"   => true,
+                    "whois_manage" => true,
+                    "next_check"   => time() + abs($totalDomains / $this->syncCount * 60) + $this->syncDelay
+                ];
 
-            if(isset($info["transferlock"])){
-                $options["transferlock"] = $info["transferlock"];
-            }
-
-            if(isset($info["cns"])){
-                $options['cns_list'] = $info["cns"];
-            }
-            if(isset($info["cns"])){
-                $options['whois'] = $info["whois"];
-            }
-
-            if (isset($info["whois_privacy"]) && $info["whois_privacy"]) {
-                $options["whois_privacy"] = $info["whois_privacy"]["status"] == "enable";
-                if (isset($info["whois_privacy"]["end_time"]) && $info["whois_privacy"]["end_time"]) {
-                    $wprivacy_endtime                 = $info["whois_privacy"]["end_time"];
-                    $options["whois_privacy_endtime"] = $wprivacy_endtime;
+                if (isset($info["transferlock"])) {
+                    $options["transferlock"] = $info["transferlock"];
                 }
-            }
 
-            foreach (range(1,5) as $k => $v) {
-                if (isset($info["ns{$v}"]) && $info["ns{$v}"]) {
-                    $options["ns{$v}"] = $info["ns{$v}"];
-                }else{
-                    unset($domainOptions["ns{$v}"]);
+                if (isset($info["cns"])) {
+                    $options['cns_list'] = $info["cns"];
                 }
-            }
-            
-            foreach ($options as $k => $v) {
-                $domainOptions[$k] = $v;
-            }
+                if (isset($info["cns"])) {
+                    $options['whois'] = $info["whois"];
+                }
 
-            $domainOptions = Utility::jencode($domainOptions);
+                if (isset($info["whois_privacy"]) && $info["whois_privacy"]) {
+                    $options["whois_privacy"] = $info["whois_privacy"]["status"] == "enable";
+                    if (isset($info["whois_privacy"]["end_time"]) && $info["whois_privacy"]["end_time"]) {
+                        $wprivacy_endtime                 = $info["whois_privacy"]["end_time"];
+                        $options["whois_privacy_endtime"] = $wprivacy_endtime;
+                    }
+                }
 
-            Models::$init->db->update("users_products", [
-                'options' => $domainOptions,
-            ])
-            ->where("id", '=', $product['id'])
-            ->save();
+                foreach (range(1, 5) as $k => $v) {
+                    if (isset($info["ns{$v}"]) && $info["ns{$v}"]) {
+                        $options["ns{$v}"] = $info["ns{$v}"];
+                    } else {
+                        unset($domainOptions["ns{$v}"]);
+                    }
+                }
+
+                foreach ($options as $k => $v) {
+                    $domainOptions[$k] = $v;
+                }
+
+                $domainOptions = Utility::jencode($domainOptions);
+
+                Models::$init->db->update("users_products", [
+                        'options' => $domainOptions,
+                    ])
+                 ->where("id", '=', $product['id'])
+                 ->save();
+            }
 
         }
     }
