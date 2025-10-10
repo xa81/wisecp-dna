@@ -1,4 +1,5 @@
 <?php
+
 if (!defined("CORE_FOLDER")) {
     die();
 }
@@ -54,11 +55,11 @@ if ((int)$test_mode != $config["settings"]["test-mode"]) {
 }
 
 if ($adp != $config["settings"]["adp"]) {
-    $sets["settings"]["adp"] = (bool)$adp==1;
+    $sets["settings"]["adp"] = (bool)$adp == 1;
 }
 
 if ($api_version != $config["settings"]["api-version"]) {
-    $sets["settings"]["api-version"] = (bool)$api_version==1;
+    $sets["settings"]["api-version"] = (bool)$api_version == 1;
 }
 
 if ($cost_cid !== false && (!isset($config["settings"]["cost-currency"]) || (int)$cost_cid != $config["settings"]["cost-currency"])) {
@@ -74,25 +75,24 @@ if ($periodic_sync !== false && (!isset($config["settings"]["periodic-sync"]) ||
 }
 
 if ($sync_count !== false && (!isset($config["settings"]["sync-count"]) || (int)$sync_count != $config["settings"]["sync-count"])) {
-    if(!in_array($sync_count,$module->syncCountList)){
+    if (!in_array($sync_count, $module->syncCountList)) {
         $sync_count = $module->syncCountList[0];
     }
     $sets["settings"]["sync-count"] = (int)$sync_count;
 }
 
 if ($sync_delay !== false && (!isset($config["settings"]["sync-delay"]) || (int)$sync_delay != $config["settings"]["sync-delay"])) {
-    if(!in_array($sync_delay,$module->syncDelayList)){
+    if (!in_array($sync_delay, $module->syncDelayList)) {
         $sync_delay = $module->syncDelayList[0];
     }
     $sets["settings"]["sync-delay"] = (int)$sync_delay;
 }
 
 
-
-
 $profit_rate = Filter::POST("profit-rate", "amount");
-if($profit_rate !== false ) {
-    $export      = Utility::array_export(Config::set("options", ["domain-profit-rate" => (float)$profit_rate]), ['pwith' => true]);
+if ($profit_rate !== false) {
+    $export = Utility::array_export(Config::set("options", ["domain-profit-rate" => (float)$profit_rate]),
+        ['pwith' => true]);
     FileManager::file_write(CONFIG_DIR . "options.php", $export);
 }
 
@@ -120,5 +120,5 @@ if ($table_exists !== 1) {
 echo Utility::jencode([
     'status'  => "successful",
     'message' => $lang["success1"],
-    'sets'=> $sets
+    'sets'    => $sets
 ]);

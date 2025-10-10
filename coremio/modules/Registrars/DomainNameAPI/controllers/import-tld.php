@@ -1,4 +1,5 @@
 <?php
+
 if (!defined("CORE_FOLDER")) {
     die();
 }
@@ -7,12 +8,12 @@ if (!Filter::isPOST()) {
 }
 /** @var $module DomainNameAPI */
 
-$LANG  = $module->lang;
+$LANG = $module->lang;
 
 $onlytlds = Filter::POST("onlytlds");
 
 $selected_tlds = [];
-if(is_array($onlytlds)) {
+if (is_array($onlytlds)) {
     $selected_tlds = $onlytlds;
 }
 

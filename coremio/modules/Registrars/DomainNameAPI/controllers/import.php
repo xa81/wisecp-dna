@@ -1,4 +1,5 @@
 <?php
+
 if (!defined("CORE_FOLDER")) {
     die();
 }

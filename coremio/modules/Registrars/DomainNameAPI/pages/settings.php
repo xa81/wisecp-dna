@@ -1,26 +1,36 @@
 <?php
-if (!defined("CORE_FOLDER")){die();}
-/** @var  $module  DomainNameAPI*/
-$LANG   = $module->lang;
+
+if (!defined("CORE_FOLDER")) {
+    die();
+}
+/** @var  $module  DomainNameAPI */
+$LANG = $module->lang;
 $CONFIG = $module->config;
 Helper::Load("Money");
 $soap_exists = class_exists("SoapClient");
-$periodicSync=$module->periodicSync;
-$syncCountList=$module->syncCountList;
-$syncDelayList=$module->syncDelayList;
+$periodicSync = $module->periodicSync;
+$syncCountList = $module->syncCountList;
+$syncDelayList = $module->syncDelayList;
 ?>
 
 
 <div id="dna-tab">
     <ul class="modules-tabs">
         <li>
-            <a href="javascript:DNAOpenTab(this,'detail');" data-tab="detail" class="modules-tab-item active"><?php echo $LANG["tabDetail"]; ?></a>
+            <a href="javascript:DNAOpenTab(this,'detail');" data-tab="detail" class="modules-tab-item active"><?php
+            echo $LANG["tabDetail"]; ?></a>
         </li>
         <li class="mod-show-ready" style="display: none">
-            <a href="javascript:DNAOpenTab(this,'import');" data-tab="import" class="modules-tab-item"><i class="fa fa-code-fork"></i> <?php echo $LANG["tabImport"]; ?></a>
+            <a href="javascript:DNAOpenTab(this,'import');" data-tab="import" class="modules-tab-item">
+                <i class="fa fa-code-fork"></i>
+                <?php
+                echo $LANG["tabImport"]; ?></a>
         </li>
         <li class="mod-show-ready" style="display: none">
-            <a href="javascript:DNAOpenTab(this,'tlds');" data-tab="tlds" class="modules-tab-item"><i class="fa fa-fire"></i> <?php echo $LANG["tabImportTld"]; ?></a>
+            <a href="javascript:DNAOpenTab(this,'tlds');" data-tab="tlds" class="modules-tab-item">
+                <i class="fa fa-fire"></i>
+                <?php
+                echo $LANG["tabImportTld"]; ?></a>
         </li>
     </ul>
 
@@ -28,88 +38,113 @@ $syncDelayList=$module->syncDelayList;
 
         <?php
         if (!$soap_exists) {
-            ?>
-            <div class="red-info">
-                <div class="padding10">
-                    <?php echo $LANG["error7"]; ?>
-                </div>
+        ?>
+        <div class="red-info">
+            <div class="padding10">
+                <?php
+                echo $LANG["error7"]; ?>
             </div>
-            <?php
+        </div>
+        <?php
         }
         ?>
 
-        <form action="<?php echo Controllers::$init->getData("links")["controller"]; ?>" method="post" id="DomainNameAPISettings">
+        <form action="<?php
+        echo Controllers::$init->getData("links")["controller"]; ?>" method="post" id="DomainNameAPISettings">
             <input type="hidden" name="operation" value="module_controller">
             <input type="hidden" name="module" value="DomainNameAPI">
             <input type="hidden" name="controller" value="settings">
 
             <div class="formcon">
-                <div class="yuzde30"><?php echo $LANG["fields"]["username"]; ?></div>
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["username"]; ?></div>
                 <div class="yuzde70">
-                    <input type="text" name="username" value="<?php echo $CONFIG["settings"]["username"]; ?>">
+                    <input type="text" name="username" value="<?php
+                    echo $CONFIG["settings"]["username"]; ?>">
                 </div>
             </div>
 
             <div class="formcon">
-                <div class="yuzde30"><?php echo $LANG["fields"]["password"]; ?></div>
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["password"]; ?></div>
                 <div class="yuzde70">
-                    <input type="password" name="password" value="<?php echo $CONFIG["settings"]["password"] ? "*****" : ""; ?>">
+                    <input type="password" name="password" value="<?php
+                    echo $CONFIG["settings"]["password"] ? "*****" : ""; ?>">
                 </div>
             </div>
 
             <div class="formcon" style="display: none">
-                <div class="yuzde30"><?php echo $LANG["fields"]["resellerid"]; ?></div>
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["resellerid"]; ?></div>
                 <div class="yuzde70">
-                    <input type="text" name="resellerid" value="<?php echo $CONFIG["settings"]["resellerid"]; ?>">
+                    <input type="text" name="resellerid" value="<?php
+                    echo $CONFIG["settings"]["resellerid"]; ?>">
                 </div>
             </div>
 
             <div class="formcon" style="display: none">
-                <div class="yuzde30"><?php echo $LANG["fields"]["api-v2"]; ?></div>
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["api-v2"]; ?></div>
                 <div class="yuzde70">
-                    <input<?php echo isset($CONFIG["settings"]["api-version"]) && $CONFIG["settings"]["api-version"] ? ' checked' : ''; ?> type="checkbox" name="api-version" value="1" id="DomainNameAPI_apiv2" class="checkbox-custom">
+                    <input<?php
+                    echo isset($CONFIG["settings"]["api-version"]) && $CONFIG["settings"]["api-version"] ? ' checked' : ''; ?> type="checkbox" name="api-version" value="1" id="DomainNameAPI_apiv2" class="checkbox-custom">
                     <label class="checkbox-custom-label" for="DomainNameAPI_adp">
-                        <span class="kinfo"><?php echo $LANG["desc"]["api-v2"]; ?></span>
+                        <span class="kinfo"><?php
+                        echo $LANG["desc"]["api-v2"]; ?></span>
                     </label>
                 </div>
             </div>
 
             <div class="formcon">
-                <div class="yuzde30"><?php echo $LANG["fields"]["privacyFee"]; ?></div>
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["privacyFee"]; ?></div>
                 <div class="yuzde70">
-                    <input type="text" name="whidden-amount" value="<?php echo Money::formatter($CONFIG["settings"]["whidden-amount"], $CONFIG["settings"]["whidden-currency"]); ?>" style="width: 100px;" onkeypress='return event.charCode==46  || event.charCode>= 48 &&event.charCode<= 57'>
+                    <input type="text" name="whidden-amount" value="<?php
+                    echo Money::formatter($CONFIG["settings"]["whidden-amount"],
+                            $CONFIG["settings"]["whidden-currency"]); ?>" style="width: 100px;" onkeypress='return event.charCode==46  || event.charCode>= 48 &&event.charCode<= 57'>
                     <select name="whidden-currency" style="width: 150px;">
                         <?php
                         foreach (Money::getCurrencies($CONFIG["settings"]["whidden-currency"]) as $currency) {
-                            ?>
-                            <option<?php echo $currency["id"] == $CONFIG["settings"]["whidden-currency"] ? ' selected' : ''; ?> value="<?php echo $currency["id"]; ?>"><?php echo $currency["name"] . " (" . $currency["code"] . ")"; ?></option>
-                            <?php
+                        ?>
+                        <option<?php
+                        echo $currency["id"] == $CONFIG["settings"]["whidden-currency"] ? ' selected' : ''; ?> value="<?php
+                        echo $currency["id"]; ?>"><?php
+                        echo $currency["name"] . " (" . $currency["code"] . ")"; ?></option>
+                        <?php
                         }
                         ?>
                     </select>
-                    <span class="kinfo"><?php echo $LANG["desc"]["privacyFee"]; ?></span>
+                    <span class="kinfo"><?php
+                    echo $LANG["desc"]["privacyFee"]; ?></span>
                 </div>
             </div>
 
             <div class="formcon">
-                <div class="yuzde30"><?php echo $LANG["fields"]["adp"]; ?></div>
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["adp"]; ?></div>
                 <div class="yuzde70">
-                    <input<?php echo isset($CONFIG["settings"]["adp"]) && $CONFIG["settings"]["adp"] ? ' checked' : ''; ?> type="checkbox" name="adp" value="1" id="DomainNameAPI_adp" class="checkbox-custom">
+                    <input<?php
+                    echo isset($CONFIG["settings"]["adp"]) && $CONFIG["settings"]["adp"] ? ' checked' : ''; ?> type="checkbox" name="adp" value="1" id="DomainNameAPI_adp" class="checkbox-custom">
                     <label class="checkbox-custom-label" for="DomainNameAPI_adp">
-                        <span class="kinfo"><?php echo $LANG["desc"]["adp"]; ?></span>
+                        <span class="kinfo"><?php
+                        echo $LANG["desc"]["adp"]; ?></span>
                     </label>
                 </div>
             </div>
 
             <div class="formcon" id="cost_currency_wrap">
-                <div class="yuzde30"><?php echo $LANG["fields"]["cost-currency"]; ?></div>
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["cost-currency"]; ?></div>
                 <div class="yuzde70">
                     <select name="cost-currency" style="width:200px;">
                         <?php
                         foreach (Money::getCurrencies($CONFIG["settings"]["cost-currency"]) as $currency) {
-                            ?>
-                            <option<?php echo $currency["id"] == $CONFIG["settings"]["cost-currency"] ? ' selected' : ''; ?> value="<?php echo $currency["id"]; ?>"><?php echo $currency["name"] . " (" . $currency["code"] . ")"; ?></option>
-                            <?php
+                        ?>
+                        <option<?php
+                        echo $currency["id"] == $CONFIG["settings"]["cost-currency"] ? ' selected' : ''; ?> value="<?php
+                        echo $currency["id"]; ?>"><?php
+                        echo $currency["name"] . " (" . $currency["code"] . ")"; ?></option>
+                        <?php
                         }
                         ?>
                     </select>
@@ -117,94 +152,119 @@ $syncDelayList=$module->syncDelayList;
             </div>
 
             <div class="formcon">
-                <div class="yuzde30"><?php echo __("admin/products/profit-rate-for-registrar-module"); ?></div>
+                <div class="yuzde30"><?php
+                echo __("admin/products/profit-rate-for-registrar-module"); ?></div>
                 <div class="yuzde70">
-                    <input type="text" name="profit-rate" value="<?php echo Config::get("options/domain-profit-rate"); ?>" style="width: 50px;" onkeypress='return event.charCode==44 || event.charCode==46 || event.charCode>= 48 &&event.charCode<= 57'>
+                    <input type="text" name="profit-rate" value="<?php
+                    echo Config::get("options/domain-profit-rate"); ?>" style="width: 50px;" onkeypress='return event.charCode==44 || event.charCode==46 || event.charCode>= 48 &&event.charCode<= 57'>
                 </div>
             </div>
 
             <div class="formcon">
-                <div class="yuzde30"><?php echo $LANG["fields"]["periodic-sync"]; ?></div>
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["periodic-sync"]; ?></div>
                 <div class="yuzde70">
-                    <input<?php echo isset($CONFIG["settings"]["periodic-sync"]) && $CONFIG["settings"]["periodic-sync"] ? ' checked' : ''; ?> type="checkbox" name="periodic-sync" value="1" id="DomainNameAPI_periodic-sync" class="checkbox-custom">
+                    <input<?php
+                    echo isset($CONFIG["settings"]["periodic-sync"]) && $CONFIG["settings"]["periodic-sync"] ? ' checked' : ''; ?> type="checkbox" name="periodic-sync" value="1" id="DomainNameAPI_periodic-sync" class="checkbox-custom">
                     <label class="checkbox-custom-label" for="DomainNameAPI_periodic-sync">
-                        <span class="kinfo"><?php echo $LANG["desc"]["periodic-sync"]; ?></span>
+                        <span class="kinfo"><?php
+                        echo $LANG["desc"]["periodic-sync"]; ?></span>
                     </label>
                 </div>
             </div>
 
             <div class="formcon" id="cost_currency_wrap">
-                <div class="yuzde30"><?php echo $LANG["fields"]["sync-count"]; ?></div>
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["sync-count"]; ?></div>
                 <div class="yuzde70">
                     <select name="sync-count" style="width:200px;">
                         <?php
                         foreach ($syncCountList as $count) {
-                            ?>
-                            <option<?php echo $count == $CONFIG["settings"]["sync-count"] ? ' selected' : ''; ?> value="<?php echo $count; ?>"><?php echo $count; ?></option>
-                            <?php
+                        ?>
+                        <option<?php
+                        echo $count == $CONFIG["settings"]["sync-count"] ? ' selected' : ''; ?> value="<?php
+                        echo $count; ?>"><?php
+                        echo $count; ?></option>
+                        <?php
                         }
                         ?>
                     </select>
                     <br>
-                    <span class="kinfo"><?php echo $LANG["desc"]["sync-count"]; ?></span>
+                    <span class="kinfo"><?php
+                    echo $LANG["desc"]["sync-count"]; ?></span>
                 </div>
             </div>
 
             <div class="formcon" id="cost_currency_wrap">
-                <div class="yuzde30"><?php echo $LANG["fields"]["sync-delay"]; ?></div>
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["sync-delay"]; ?></div>
                 <div class="yuzde70">
                     <select name="sync-delay" style="width:200px;">
                         <?php
                         foreach ($syncDelayList as $delay) {
-                            ?>
-                            <option<?php echo $delay == $CONFIG["settings"]["sync-delay"] ? ' selected' : ''; ?> value="<?php echo $delay; ?>"><?php echo abs($delay/60/60); ?> <?php echo $LANG["hour"]; ?></option>
-                            <?php
+                        ?>
+                        <option<?php
+                        echo $delay == $CONFIG["settings"]["sync-delay"] ? ' selected' : ''; ?> value="<?php
+                        echo $delay; ?>"><?php
+                        echo abs($delay / 60 / 60); ?><?php
+                        echo $LANG["hour"]; ?></option>
+                        <?php
                         }
                         ?>
                     </select>
                     <br>
-                    <span class="kinfo"><?php echo $LANG["desc"]["sync-delay"]; ?></span>
-                </div>
-            </div>
-
-
-
-            <div class="formcon">
-                <div class="yuzde30"><?php echo $LANG["fields"]["balance"]; ?></div>
-                <div class="yuzde70 js-balance" >
-
+                    <span class="kinfo"><?php
+                    echo $LANG["desc"]["sync-delay"]; ?></span>
                 </div>
             </div>
 
 
             <div class="formcon">
-                <div class="yuzde30"></div>
-                <div class="yuzde70 connection-time" >
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["balance"]; ?></div>
+                <div class="yuzde70 js-balance">
+
                 </div>
             </div>
+
 
             <div class="formcon">
                 <div class="yuzde30"></div>
-                <div class="yuzde70 version-check" >
+                <div class="yuzde70 connection-time">
+                </div>
+            </div>
+
+            <div class="formcon">
+                <div class="yuzde30"></div>
+                <div class="yuzde70 version-check">
                 </div>
             </div>
 
 
-            <div class="formcon" <?php if (!isset($balance['balances'])) { echo "style='display:none'"; } ?> >
-                <div class="yuzde30"><?php echo $LANG["fields"]["importTld"]; ?></div>
+            <div class="formcon" <?php
+            if (!isset($balance['balances'])) {
+                echo "style='display:none'";
+            } ?> >
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["importTld"]; ?></div>
                 <div class="yuzde70">
-                    <a class="lbtn" href="javascript:open_modal('DomainNameAPI_import_tld');void 0;"><?php echo $LANG["importTldButton"]; ?></a>
+                    <a class="lbtn" href="javascript:open_modal('DomainNameAPI_import_tld');void 0;"><?php
+                    echo $LANG["importTldButton"]; ?></a>
                     <div class="clear"></div>
-                    <span class="kinfo"><?php echo $LANG["desc"]["importTld-1"]; ?></span>
+                    <span class="kinfo"><?php
+                    echo $LANG["desc"]["importTld-1"]; ?></span>
                 </div>
             </div>
 
             <div class="formcon">
-                <div class="yuzde30"><?php echo $LANG["fields"]["test-mode"]; ?></div>
+                <div class="yuzde30"><?php
+                echo $LANG["fields"]["test-mode"]; ?></div>
                 <div class="yuzde70">
-                    <input<?php echo $CONFIG["settings"]["test-mode"] ? ' checked' : ''; ?> type="checkbox" name="test-mode" value="1" id="DomainNameAPI_test-mode" class="checkbox-custom">
+                    <input<?php
+                    echo $CONFIG["settings"]["test-mode"] ? ' checked' : ''; ?> type="checkbox" name="test-mode" value="1" id="DomainNameAPI_test-mode" class="checkbox-custom">
                     <label class="checkbox-custom-label" for="DomainNameAPI_test-mode">
-                        <span class="kinfo"><?php echo $LANG["desc"]["test-mode"]; ?></span>
+                        <span class="kinfo"><?php
+                        echo $LANG["desc"]["test-mode"]; ?></span>
                     </label>
                 </div>
             </div>
@@ -215,10 +275,12 @@ $syncDelayList=$module->syncDelayList;
             <div style="float:left;" class="guncellebtn yuzde30">
                 <a id="DomainNameAPI_testConnect" href="javascript:void(0);" class="lbtn">
                     <i class="fa fa-plug" aria-hidden="true"></i>
-                    <?php echo $LANG["testButton"]; ?></a></div>
+                    <?php
+                    echo $LANG["testButton"]; ?></a></div>
 
             <div style="float:right;" class="guncellebtn yuzde30">
-                <a id="DomainNameAPI_submit" href="javascript:void(0);" class="yesilbtn gonderbtn"><?php echo $LANG["saveButton"]; ?></a>
+                <a id="DomainNameAPI_submit" href="javascript:void(0);" class="yesilbtn gonderbtn"><?php
+                echo $LANG["saveButton"]; ?></a>
             </div>
 
         </form>
@@ -276,12 +338,14 @@ $syncDelayList=$module->syncDelayList;
 
         <div class="blue-info">
             <div class="padding15">
-                <?php echo $LANG["importNote"]; ?>
+                <?php
+                echo $LANG["importNote"]; ?>
             </div>
         </div>
 
 
-        <form action="<?php echo Controllers::$init->getData("links")["controller"]; ?>" method="post" id="DomainNameAPIImport">
+        <form action="<?php
+        echo Controllers::$init->getData("links")["controller"]; ?>" method="post" id="DomainNameAPIImport">
             <input type="hidden" name="operation" value="module_controller">
             <input type="hidden" name="module" value="DomainNameAPI">
             <input type="hidden" name="controller" value="import">
@@ -290,10 +354,14 @@ $syncDelayList=$module->syncDelayList;
                 <thead style="background:#ebebeb;">
                 <tr>
                     <th align="center" data-orderable="false">#</th>
-                    <th align="left" data-orderable="false"><?php echo __("admin/products/hosting-shared-servers-import-accounts-domain"); ?></th>
-                    <th align="center" data-orderable="false"><?php echo __("admin/products/hosting-shared-servers-import-accounts-user"); ?></th>
-                    <th align="center" data-orderable="false"><?php echo __("admin/products/hosting-shared-servers-import-accounts-start"); ?></th>
-                    <th align="center" data-orderable="false"><?php echo __("admin/products/hosting-shared-servers-import-accounts-end"); ?></th>
+                    <th align="left" data-orderable="false"><?php
+                    echo __("admin/products/hosting-shared-servers-import-accounts-domain"); ?></th>
+                    <th align="center" data-orderable="false"><?php
+                    echo __("admin/products/hosting-shared-servers-import-accounts-user"); ?></th>
+                    <th align="center" data-orderable="false"><?php
+                    echo __("admin/products/hosting-shared-servers-import-accounts-start"); ?></th>
+                    <th align="center" data-orderable="false"><?php
+                    echo __("admin/products/hosting-shared-servers-import-accounts-end"); ?></th>
                 </tr>
                 </thead>
                 <tbody align="center" style="border-top:none;">
@@ -304,14 +372,17 @@ $syncDelayList=$module->syncDelayList;
             <hr style="margin-top: 30px">
 
             <h4>
-                <?php echo $LANG["headerImport"]; ?>
+                <?php
+                echo $LANG["headerImport"]; ?>
             </h4>
             <table width="100%" id="dna-list-queue" class="table table-striped table-borderedx table-condensed nowrap">
                 <thead style="background:#ebebeb;">
                 <tr>
                     <th align="center" data-orderable="false">#</th>
-                    <th align="left" data-orderable="false"><?php echo __("admin/products/hosting-shared-servers-import-accounts-domain"); ?></th>
-                    <th align="center" data-orderable="false"><?php echo __("admin/products/hosting-shared-servers-import-accounts-user"); ?></th>
+                    <th align="left" data-orderable="false"><?php
+                    echo __("admin/products/hosting-shared-servers-import-accounts-domain"); ?></th>
+                    <th align="center" data-orderable="false"><?php
+                    echo __("admin/products/hosting-shared-servers-import-accounts-user"); ?></th>
                     <th align="center" data-orderable="false"></th>
                 </tr>
                 </thead>
@@ -321,7 +392,8 @@ $syncDelayList=$module->syncDelayList;
 
             <div class="clear"></div>
             <div class="guncellebtn yuzde20" style="float: right;">
-                <a href="javascript:void(0);" id="dna-import-submit" class="gonderbtn mavibtn"><?php echo $LANG["importStartButton"]; ?></a>
+                <a href="javascript:void(0);" id="dna-import-submit" class="gonderbtn mavibtn"><?php
+                echo $LANG["importStartButton"]; ?></a>
             </div>
 
         </form>
@@ -332,12 +404,14 @@ $syncDelayList=$module->syncDelayList;
 
         <div class="blue-info">
             <div class="padding15">
-                <?php echo $LANG["importTldNote"]; ?>
+                <?php
+                echo $LANG["importTldNote"]; ?>
             </div>
         </div>
 
 
-        <form action="<?php echo Controllers::$init->getData("links")["controller"]; ?>" method="post" id="DomainNameAPITLDImport">
+        <form action="<?php
+        echo Controllers::$init->getData("links")["controller"]; ?>" method="post" id="DomainNameAPITLDImport">
             <input type="hidden" name="operation" value="module_controller">
             <input type="hidden" name="module" value="DomainNameAPI">
             <input type="hidden" name="controller" value="tldImport">
@@ -346,32 +420,48 @@ $syncDelayList=$module->syncDelayList;
                 <thead style="background:#ebebeb;">
                 <tr>
                     <th align="center" data-orderable="false" style="background: unset;">#</th>
-                    <th align="left" data-orderable="false" style="background: unset;"> </th>
-                    <th align="left" data-orderable="false" style="background: unset;"> </th>
-                    <th align="left" data-orderable="false" style="background: unset;"> </th>
-                    <th align="center" data-orderable="false" colspan="3" class="dt-head-1-spans"><?php echo $LANG['register'];?></th>
-                    <th align="center" data-orderable="false" colspan="3" class="dt-head-1-spans"><?php echo $LANG['transfer'];?></th>
-                    <th align="center" data-orderable="false" colspan="3" class="dt-head-1-spans"><?php echo $LANG['renew'];?></th>
-                     <th align="left" data-orderable="false" style="background: unset;"> </th>
+                    <th align="left" data-orderable="false" style="background: unset;"></th>
+                    <th align="left" data-orderable="false" style="background: unset;"></th>
+                    <th align="left" data-orderable="false" style="background: unset;"></th>
+                    <th align="center" data-orderable="false" colspan="3" class="dt-head-1-spans"><?php
+                    echo $LANG['register']; ?></th>
+                    <th align="center" data-orderable="false" colspan="3" class="dt-head-1-spans"><?php
+                    echo $LANG['transfer']; ?></th>
+                    <th align="center" data-orderable="false" colspan="3" class="dt-head-1-spans"><?php
+                    echo $LANG['renew']; ?></th>
+                    <th align="left" data-orderable="false" style="background: unset;"></th>
                 </tr>
                 <tr>
                     <th align="center" data-orderable="false"></th>
                     <th align="center" data-orderable="false">
                         <input type="checkbox" id="checkAll">
                     </th>
-                    <th align="left" data-orderable="false"><?php echo $LANG['tld'];?></th>
-                    <th align="left" data-orderable="false"><?php echo $LANG['dna'];?></th>
-                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php echo $LANG['cost'];?></th>
-                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php echo $LANG['current'];?></th>
-                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php echo $LANG['margin'];?></th>
-                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php echo $LANG['cost'];?></th>
-                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php echo $LANG['current'];?></th>
-                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php echo $LANG['margin'];?></th>
-                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php echo $LANG['cost'];?></th>
-                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php echo $LANG['current'];?></th>
-                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php echo $LANG['margin'];?></th>
+                    <th align="left" data-orderable="false"><?php
+                    echo $LANG['tld']; ?></th>
+                    <th align="left" data-orderable="false"><?php
+                    echo $LANG['dna']; ?></th>
+                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php
+                    echo $LANG['cost']; ?></th>
+                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php
+                    echo $LANG['current']; ?></th>
+                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php
+                    echo $LANG['margin']; ?></th>
+                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php
+                    echo $LANG['cost']; ?></th>
+                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php
+                    echo $LANG['current']; ?></th>
+                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php
+                    echo $LANG['margin']; ?></th>
+                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php
+                    echo $LANG['cost']; ?></th>
+                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php
+                    echo $LANG['current']; ?></th>
+                    <th align="center" data-orderable="false" class="dt-head-2-spans"><?php
+                    echo $LANG['margin']; ?></th>
                     <th align="left" data-orderable="false" class="dt-head-2-min">Excl.
-                        <a href="javascript:void(0)" class="sbtn excl-save-btn" style="display: none;"><i class="fa fa-floppy-o"></i></a>
+                        <a href="javascript:void(0)" class="sbtn excl-save-btn" style="display: none;">
+                            <i class="fa fa-floppy-o"></i>
+                        </a>
                     </th>
 
                 </tr>
@@ -382,29 +472,32 @@ $syncDelayList=$module->syncDelayList;
 
             <div class="clear"></div>
             <div class="guncellebtn yuzde20" style="float: left;">
-                <a href="javascript:void(0);" id="dna-tld-import-submit" class="gonderbtn mavibtn"><?php echo $LANG["importStartButton"]; ?><span></span></a>
+                <a href="javascript:void(0);" id="dna-tld-import-submit" class="gonderbtn mavibtn"><?php
+                echo $LANG["importStartButton"]; ?><span></span></a>
             </div>
 
         </form>
-
 
 
     </div>
 
 </div>
 
-<div id="DomainNameAPI_import_tld" style="display: none;" data-izimodal-title="<?php echo $LANG["fields"]["importTld"]; ?>">
+<div id="DomainNameAPI_import_tld" style="display: none;" data-izimodal-title="<?php
+echo $LANG["fields"]["importTld"]; ?>">
     <div class="padding20">
 
         <p style="text-align: center; font-size: 17px;">
-            <?php echo $LANG["desc"]["importTld-2"]; ?>
+            <?php
+            echo $LANG["desc"]["importTld-2"]; ?>
         </p>
 
         <div align="center">
             <div class="yuzde50">
                 <a class="yesilbtn gonderbtn" href="javascript:void 0;" id="DomainNameAPI_import_tld_submit">
                     <i class="fa fa-check" aria-hidden="true"></i>
-                    <?php echo ___("needs/ok"); ?></a>
+                    <?php
+                    echo ___("needs/ok"); ?></a>
             </div>
         </div>
 
@@ -413,11 +506,10 @@ $syncDelayList=$module->syncDelayList;
 </div>
 
 
-
 <script type="text/javascript">
 
 
-  function DomainNameAPI_import_handler2(result){
+  function DomainNameAPI_import_handler2(result) {
     console.log(result);
     console.log(getJson(result));
   }
@@ -453,7 +545,7 @@ $syncDelayList=$module->syncDelayList;
 
   }
 
-  const versionCheckUrl = "https://api.github.com/repos/domainreseller/wisecp-dna/releases/latest";
+  const versionCheckUrl = 'https://api.github.com/repos/domainreseller/wisecp-dna/releases/latest';
   const requestUrl = "<?php echo Controllers::$init->getData('links')['controller']; ?>";
   const domainsListRequest = {
     operation : 'module_controller',
@@ -526,7 +618,9 @@ $syncDelayList=$module->syncDelayList;
   let lastChecked = null;
 
   function initializeImportTab() {
-    if (importTabInit) return;
+    if (importTabInit) {
+      return;
+    }
     importTabInit = true;
 
     queueTable = $('#dna-list-queue').DataTable({
@@ -541,7 +635,7 @@ $syncDelayList=$module->syncDelayList;
       processing  : true,
       serverSide  : true,
       ajax        : {
-        url: requestUrl,
+        url : requestUrl,
         type: 'POST',
         data: (d) => $.extend({}, d, domainsListRequest),
       },
@@ -569,8 +663,8 @@ $syncDelayList=$module->syncDelayList;
             }
           },
         },
-        { 'data': 'creation_date' },
-        { 'data': 'end_date' },
+        {'data': 'creation_date'},
+        {'data': 'end_date'},
       ],
       lengthMenu  : [
         [50, 10, 25, -1], [50, 10, 25, allText],
@@ -579,7 +673,7 @@ $syncDelayList=$module->syncDelayList;
       language    : {'url': languageUrl},
       rowCallback : function(row, data, index) {
         if (data.order_id > 0) {
-          $(row).css({ 'background-color': '#c2edc2', 'opacity': '0.7', 'filter': 'alpha(opacity=70)' });
+          $(row).css({'background-color': '#c2edc2', 'opacity': '0.7', 'filter': 'alpha(opacity=70)'});
         }
       },
       drawCallback: function(settings) {
@@ -632,71 +726,89 @@ $syncDelayList=$module->syncDelayList;
     });
   }
 
-  function initializeTldImportTab(){
+  function initializeTldImportTab() {
 
-
-    if(importTldTabInit) return;
+    if (importTldTabInit) {
+      return;
+    }
     importTldTabInit = true;
 
-    try{
+    try {
       tldTable.columns.adjust().draw();
-    }catch (e) {
+    }
+    catch (e) {
       console.log(e);
     }
 
-    tldTable=$('#dna-list-tlds').DataTable({
-      search: false,
-      processing  : true,
-      serverSide  : true,
-      ajax        : {
-        url: requestUrl,
+    tldTable = $('#dna-list-tlds').DataTable({
+      search        : false,
+      processing    : true,
+      serverSide    : true,
+      ajax          : {
+        url : requestUrl,
         type: 'POST',
         data: (d) => $.extend({}, d, tldsListRequest),
       },
-        columns: [
-            {'data': null, 'render': function(data, type, row, meta) {return meta.row + 1;}},
-            {'data': null, 'render': function(data, type, row, meta) {return `<input type="checkbox" name="tld[]" value="${row.tld}" class="tld-checkbox">`;}},
-            {'data': 'tld'},
-            {'data': null, 'render': function(data, type, row, meta) {return renderModuleIcon(row.module);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.register_cost);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.register_current);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderMarginPercent(row.register_margin_percent, expectedProfitRate);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.transfer_cost);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.transfer_current);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderMarginPercent(row.transfer_margin_percent, expectedProfitRate);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.renewal_cost);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.renewal_current);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderMarginPercent(row.renewal_margin_percent, expectedProfitRate);}},
-            {'data': null, 'render': function(data, type, row, meta) {return renderExcludedTldCb(row);}}
+      columns       : [
+        {'data': null, 'render': function(data, type, row, meta) {return meta.row + 1;}},
+        {
+          'data'  : null,
+          'render': function(
+              data, type, row,
+              meta) {return `<input type="checkbox" name="tld[]" value="${row.tld}" class="tld-checkbox">`;},
+        },
+        {'data': 'tld'},
+        {'data': null, 'render': function(data, type, row, meta) {return renderModuleIcon(row.module);}},
+        {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.register_cost);}},
+        {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.register_current);}},
+        {
+          'data'  : null,
+          'render': function(data, type, row, meta) {
+            return renderMarginPercent(row.register_margin_percent, expectedProfitRate);
+          },
+        },
+        {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.transfer_cost);}},
+        {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.transfer_current);}},
+        {
+          'data'  : null,
+          'render': function(data, type, row, meta) {
+            return renderMarginPercent(row.transfer_margin_percent, expectedProfitRate);
+          },
+        },
+        {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.renewal_cost);}},
+        {'data': null, 'render': function(data, type, row, meta) {return renderCost(row.renewal_current);}},
+        {
+          'data'  : null,
+          'render': function(data, type, row, meta) {
+            return renderMarginPercent(row.renewal_margin_percent, expectedProfitRate);
+          },
+        },
+        {'data': null, 'render': function(data, type, row, meta) {return renderExcludedTldCb(row);}},
 
-        ],
-      columnDefs: [{ 'targets': [0], 'visible': false }],
-      lengthMenu: [[-1], [allText]],
-      responsive: true,
-      language  : {'url': languageUrl},
-      scrollY: '400px',
+      ],
+      columnDefs    : [{'targets': [0], 'visible': false}],
+      lengthMenu    : [[-1], [allText]],
+      responsive    : true,
+      language      : {'url': languageUrl},
+      scrollY       : '400px',
       scrollCollapse: true,
-      initComplete: function() {
-          saveOriginalState();
-        }
+      initComplete  : function() {
+        saveOriginalState();
+      },
 
     });
-
-
-
 
   }
 
   $(document).ready(function() {
 
     setTimeout(function() {
-       $('.mod-show-ready').show();
+      $('.mod-show-ready').show();
     }, 1700);
 
-
     setTimeout(function() {
-       getBalanceInfo();
-       checkModuleVersion();
+      getBalanceInfo();
+      checkModuleVersion();
     }, 500);
 
     $('#DomainNameAPI_import_tld_submit').on('click', function() {
@@ -802,83 +914,83 @@ $syncDelayList=$module->syncDelayList;
 
     $('#dna-import-submit').on('click', function() {
       const queueLength = queueTable.rows().data().length;
-    if (queueLength === 0) {
+      if (queueLength === 0) {
+        swal({
+          icon : 'warning',
+          title: 'Uyarı',
+          text : noImportDomainsMessage,
+        });
+        return;
+      }
+
       swal({
-        icon : 'warning',
-        title: 'Uyarı',
-        text : noImportDomainsMessage,
+        title            : `${queueLength} ${importQuestionMessage}`,
+        showCancelButton : true,
+        confirmButtonText: yesMessage,
+        cancelButtonText : noMessage,
+      }).then((result) => {
+
+        let queueData = queueTable.rows().data().toArray();
+        let currentIndex = 0;
+
+        const processNext = () => {
+          if (currentIndex < queueData.length) {
+            let rowData = queueData[currentIndex];
+            console.log(rowData);
+            let domain = rowData[0];
+
+            let $userField = $('<div>').html(rowData[2]);
+            let userId = $userField.find('input[name="user_id"]').val();
+            let userName = $userField.find('span').text();
+
+            let postData = $.extend({}, domainsListRequest,
+                {domain: domain, user_id: userId, controller: 'import-single'});
+
+            // Yeni bir swal oluştur ve progress barı güncelle
+            swal({
+              title            : importProcessingMessage,
+              html             :
+                  '<div  style="display: inline-flex;">' + processMessage + (currentIndex + 1) + '/' +
+                  (queueData.length) + ' <div class="loader" style="scale: 0.4"></div>  </div>' +
+                  '<div > ' + domain + ' → ' + userName + '</div>',
+              allowOutsideClick: false,
+              showConfirmButton: false,
+            });
+
+            $.post(requestUrl, postData, function(response) {
+              currentIndex++;
+
+              // Sonraki domaini işleme al
+              processNext();
+            });
+          }
+          else {
+            // İşlem tamamlandı
+
+            let request_invalidate = domainsListRequest;
+            request_invalidate.start = 0;
+            request_invalidate.length = 50;
+            request_invalidate.invalidate = 1;
+
+            $.post(requestUrl, request_invalidate, function(response) {});
+
+            swal.close();
+            swal({
+              icon             : 'success',
+              title            : importFinishedMessage,
+              confirmButtonText: okMessage,
+            }).then(() => {
+              queueTable.clear().draw();
+              $('#dna-list-domains').DataTable().ajax.reload();
+            });
+          }
+        };
+
+        // İlk domaini işleme al
+        processNext();
+
       });
-      return;
-    }
-
-    swal({
-      title            : `${queueLength} ${importQuestionMessage}`,
-      showCancelButton : true,
-      confirmButtonText: yesMessage,
-      cancelButtonText : noMessage,
-    }).then((result) => {
-
-      let queueData = queueTable.rows().data().toArray();
-      let currentIndex = 0;
-
-      const processNext = () => {
-        if (currentIndex < queueData.length) {
-          let rowData = queueData[currentIndex];
-          console.log(rowData);
-          let domain = rowData[0];
-
-          let $userField = $('<div>').html(rowData[2]);
-          let userId = $userField.find('input[name="user_id"]').val();
-          let userName = $userField.find('span').text();
-
-          let postData = $.extend({}, domainsListRequest,
-              {domain: domain, user_id: userId, controller: 'import-single'});
-
-          // Yeni bir swal oluştur ve progress barı güncelle
-          swal({
-            title            : importProcessingMessage,
-            html             :
-                '<div  style="display: inline-flex;">' + processMessage + (currentIndex + 1) + '/' +
-                (queueData.length) + ' <div class="loader" style="scale: 0.4"></div>  </div>' +
-                '<div > ' + domain + ' → ' + userName + '</div>',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-          });
-
-          $.post(requestUrl, postData, function(response) {
-            currentIndex++;
-
-            // Sonraki domaini işleme al
-            processNext();
-          });
-        }
-        else {
-          // İşlem tamamlandı
-
-          let request_invalidate = domainsListRequest;
-          request_invalidate.start = 0;
-          request_invalidate.length = 50;
-          request_invalidate.invalidate = 1;
-
-          $.post(requestUrl, request_invalidate, function(response) {});
-
-          swal.close();
-          swal({
-            icon             : 'success',
-            title            : importFinishedMessage,
-            confirmButtonText: okMessage,
-          }).then(() => {
-            queueTable.clear().draw();
-            $('#dna-list-domains').DataTable().ajax.reload();
-          });
-        }
-      };
-
-      // İlk domaini işleme al
-      processNext();
-
     });
-  });
 
     $('#dna-tld-import-submit').on('click', function() {
       const selectedTlds = $('.tld-checkbox:checked').map(function() {
@@ -903,34 +1015,35 @@ $syncDelayList=$module->syncDelayList;
         cancelButtonText : noMessage,
       }).then((result) => {
 
-          swal({
-            title            : stillProcessingMessage,
-            html             : '<div style="display: inline-flex;"> '+stillProcessingMessage+' <div class="loader" style="scale: 0.4"></div>  </div>',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-          });
+        swal({
+          title            : stillProcessingMessage,
+          html             : '<div style="display: inline-flex;"> ' + stillProcessingMessage +
+              ' <div class="loader" style="scale: 0.4"></div>  </div>',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+        });
 
-          const postData = $.extend({}, importTldRequest, {onlytlds: selectedTlds});
+        const postData = $.extend({}, importTldRequest, {onlytlds: selectedTlds});
 
-          $.ajax({
-            url    : requestUrl,
-            method : 'post',
-            data   : postData,
-            success: function(response) {
-              swal({
-                icon : 'success',
-                title: `${tldCount} ${numofTLDSyncedMessage}`,
-                text : numofTLDSyncedTxtMessage,
-              });
-            },
-            error  : function(error) {
-              swal({
-                icon : 'error',
-                title: numofTLDNotSyncedMessage,
-                text : numofTLDNotSyncedTxtMessage,
-              });
-            },
-          });
+        $.ajax({
+          url    : requestUrl,
+          method : 'post',
+          data   : postData,
+          success: function(response) {
+            swal({
+              icon : 'success',
+              title: `${tldCount} ${numofTLDSyncedMessage}`,
+              text : numofTLDSyncedTxtMessage,
+            });
+          },
+          error  : function(error) {
+            swal({
+              icon : 'error',
+              title: numofTLDNotSyncedMessage,
+              text : numofTLDNotSyncedTxtMessage,
+            });
+          },
+        });
 
       });
     });
@@ -958,7 +1071,8 @@ $syncDelayList=$module->syncDelayList;
       $('.js-balance').html('<span>' + icon + ' ' + response.message + '</span>');
 
       let timeColor = responseTime < 1 ? 'green' : responseTime < 3 ? 'orange' : 'red';
-      $('.connection-time').html('<span style="color:' + timeColor + ';">' + eplasedTime.replace(':time:', responseTime) + '</span>');
+      $('.connection-time').
+          html('<span style="color:' + timeColor + ';">' + eplasedTime.replace(':time:', responseTime) + '</span>');
     }, 'json');
   }
 
@@ -1018,7 +1132,8 @@ $syncDelayList=$module->syncDelayList;
 
     if (tabName === 'import') {
       initializeImportTab();
-    } else if (tabName === 'tlds') {
+    }
+    else if (tabName === 'tlds') {
       initializeTldImportTab();
     }
   }
@@ -1089,14 +1204,15 @@ $syncDelayList=$module->syncDelayList;
       let versionText = '';
 
       if ('V' + currentVersion !== latestVersion) {
-            versionText = `
+        versionText = `
               <p class="out-of-date"><i class="fas fa-minus-circle"></i> ${txtVersion1} <strong>V${currentVersion}</strong>.
               <br>Sunucudaki son versiyon: <strong>${latestVersion}</strong> ${txtVersion2}</p>
               <a href="${latestUrl}" target="_blank">${txtVersion3}</a>`;
-          } else {
-            versionText = `
+      }
+      else {
+        versionText = `
               <p class="up-to-date"><i class="fas fa-check-circle"></i> ${txtVersion4} (V${currentVersion})</p>`;
-          }
+      }
 
       $('.version-check').html(versionText);
 
@@ -1107,28 +1223,51 @@ $syncDelayList=$module->syncDelayList;
 
 <style>
     .loader {
-      width: 20px;
-      aspect-ratio: 1;
-      border-radius: 50%;
-      border: 8px solid #514b82;
-      animation:
-        l20-1 0.8s infinite linear alternate,
+        width: 20px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: 8px solid #514b82;
+        animation: l20-1 0.8s infinite linear alternate,
         l20-2 1.6s infinite linear;
     }
-    @keyframes l20-1{
-       0%    {clip-path: polygon(50% 50%,0       0,  50%   0%,  50%    0%, 50%    0%, 50%    0%, 50%    0% )}
-       12.5% {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100%   0%, 100%   0%, 100%   0% )}
-       25%   {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100% 100%, 100% 100%, 100% 100% )}
-       50%   {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100% 100%, 50%  100%, 0%   100% )}
-       62.5% {clip-path: polygon(50% 50%,100%    0, 100%   0%,  100%   0%, 100% 100%, 50%  100%, 0%   100% )}
-       75%   {clip-path: polygon(50% 50%,100% 100%, 100% 100%,  100% 100%, 100% 100%, 50%  100%, 0%   100% )}
-       100%  {clip-path: polygon(50% 50%,50%  100%,  50% 100%,   50% 100%,  50% 100%, 50%  100%, 0%   100% )}
+
+    @keyframes l20-1 {
+        0% {
+            clip-path: polygon(50% 50%, 0 0, 50% 0%, 50% 0%, 50% 0%, 50% 0%, 50% 0%)
+        }
+        12.5% {
+            clip-path: polygon(50% 50%, 0 0, 50% 0%, 100% 0%, 100% 0%, 100% 0%, 100% 0%)
+        }
+        25% {
+            clip-path: polygon(50% 50%, 0 0, 50% 0%, 100% 0%, 100% 100%, 100% 100%, 100% 100%)
+        }
+        50% {
+            clip-path: polygon(50% 50%, 0 0, 50% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%)
+        }
+        62.5% {
+            clip-path: polygon(50% 50%, 100% 0, 100% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%)
+        }
+        75% {
+            clip-path: polygon(50% 50%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 50% 100%, 0% 100%)
+        }
+        100% {
+            clip-path: polygon(50% 50%, 50% 100%, 50% 100%, 50% 100%, 50% 100%, 50% 100%, 0% 100%)
+        }
     }
-    @keyframes l20-2{
-      0%    {transform:scaleY(1)  rotate(0deg)}
-      49.99%{transform:scaleY(1)  rotate(135deg)}
-      50%   {transform:scaleY(-1) rotate(0deg)}
-      100%  {transform:scaleY(-1) rotate(-135deg)}
+
+    @keyframes l20-2 {
+        0% {
+            transform: scaleY(1) rotate(0deg)
+        }
+        49.99% {
+            transform: scaleY(1) rotate(135deg)
+        }
+        50% {
+            transform: scaleY(-1) rotate(0deg)
+        }
+        100% {
+            transform: scaleY(-1) rotate(-135deg)
+        }
     }
 
     .dt-head-1-spans {
@@ -1159,7 +1298,8 @@ $syncDelayList=$module->syncDelayList;
     #dna-list-tlds tbody tr td:nth-child(3), #dna-list-tlds tbody tr td:nth-child(4) {
         text-align: center;
     }
-    #dna-list-tlds_length, #dna-list-tlds_filter,#dna-list-tlds_paginate {
+
+    #dna-list-tlds_length, #dna-list-tlds_filter, #dna-list-tlds_paginate {
         display: none;
     }
 </style>

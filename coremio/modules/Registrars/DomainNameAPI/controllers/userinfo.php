@@ -1,14 +1,13 @@
 <?php
+
 if (!defined("CORE_FOLDER")) {
     die();
 }
 /** @var $module DomainNameAPI */
 
-/** @var $module DomainNameAPI */
-
 try {
     $user = $module->getDNAUser();
-}catch (Exception $e) {
+} catch (Exception $e) {
     $user = [
         'result' => 'ERROR',
         'error'  => [
@@ -31,7 +30,7 @@ if ($user["result"] == "OK") {
             $balance_texts[] = $v["balance"] . " " . $v["currency"];
         }
     }
-    $resp['message'] = '#'.$user['id'].' '.$user['name'].' ('.implode(", ", $balance_texts).')';
+    $resp['message'] = '#' . $user['id'] . ' ' . $user['name'] . ' (' . implode(", ", $balance_texts) . ')';
 }
 
 
