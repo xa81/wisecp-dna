@@ -20,6 +20,7 @@ class DomainNameAPI {
 
     public $version = "1.18.10";
 
+
     /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
     public  $config  = [];
