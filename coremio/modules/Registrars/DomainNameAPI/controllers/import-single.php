@@ -12,7 +12,7 @@ $lang    = $module->lang;
 $domain  = Filter::POST("domain");
 $user_id = Filter::POST("user_id");
 
-if ($user_id < 1 && strlen($domain) < 3) {
+if ($user_id < 1 || strlen($domain) < 3) {
     return false;
 }
 

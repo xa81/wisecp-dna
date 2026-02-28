@@ -12,10 +12,13 @@ if (!$data || !is_array($data)) {
     return false;
 }
 
-if (!$module->import_domain($data)) {
+$results = $module->import_domain($data);
+
+if (!empty($results)) {
     die(Utility::jencode([
         'status'  => "error",
         'message' => $lang["error9"],
+        'data'    => $results,
     ]));
 }
 
