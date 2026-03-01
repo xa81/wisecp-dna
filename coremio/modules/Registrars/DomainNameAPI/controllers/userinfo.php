@@ -19,7 +19,7 @@ try {
 
 $resp = [
     'loggedin' => $user["result"] == "OK",
-    'message'  => $user['error']["Code"] . " : " . $user['error']["Details"],
+    'message'  => isset($user['error']) ? ($user['error']["Code"] . " : " . $user['error']["Details"]) : '',
     'lo'       => $user
 ];
 

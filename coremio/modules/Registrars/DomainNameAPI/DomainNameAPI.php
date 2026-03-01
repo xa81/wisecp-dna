@@ -7,7 +7,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * @package    coremio/modules/Registrars/DomainNameAPI
 
 
- * @version    1.18.10
+ * @version    1.18.11
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -18,7 +18,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 class DomainNameAPI {
 
 
-    public $version = "1.18.10";
+    public $version = "1.18.11";
 
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
@@ -33,7 +33,7 @@ class DomainNameAPI {
     public  $periodicSync = false;
     private $syncCount=5;
     public $syncCountList=[5,10,15,20];
-    private $syncDelay=84600; // 24 hours
+    private $syncDelay=86400; // 24 hours
     public $syncDelayList= [
         43200, // 12 hours
         86400, // 24 hours
@@ -141,6 +141,7 @@ class DomainNameAPI {
             return $this->api;
         }
         $this->api = new DomainNameAPI_PHPLibrary($this->username, $this->password,$this->tmode);
+        return $this->api;
     }
 
 
@@ -689,7 +690,7 @@ class DomainNameAPI {
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
-            return true;
+            return false;
         }
 
         $modifyContact = $this->api->SaveContacts($domain, $this->contactProcess($whois));
@@ -1432,7 +1433,7 @@ class DomainNameAPI {
                 if (isset($info["cns"])) {
                     $options['cns_list'] = $info["cns"];
                 }
-                if (isset($info["cns"])) {
+                if (isset($info["whois"])) {
                     $options['whois'] = $info["whois"];
                 }
 

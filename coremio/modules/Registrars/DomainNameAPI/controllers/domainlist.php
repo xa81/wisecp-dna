@@ -14,7 +14,7 @@ $length       = (int)Filter::POST("length");
 $invalidation = (int)Filter::POST("invalidate");
 $search       = Filter::POST("search")['value'];
 
-$pageLength = $length;
+$pageLength = $length > 0 ? $length : 10;
 $pageNumber = $start / $pageLength;
 
 $domains = [];
