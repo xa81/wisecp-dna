@@ -947,6 +947,8 @@ class DomainNameAPI {
             $return_data["status"] = "active";
         } elseif ($currentstatus == "Expired") {
             $return_data["status"] = "expired";
+        } elseif ($currentstatus == "TransferredOut") {
+            $return_data["status"] = "transferred";
         }
 
         return $return_data;
@@ -1010,6 +1012,8 @@ class DomainNameAPI {
             $return_data["status"] = "active";
         } elseif ($currentstatus == "Expired") {
             $return_data["status"] = "expired";
+        } elseif ($currentstatus == "TransferredOut") {
+            $return_data["status"] = "transferred";
         }
 
         return $return_data;
