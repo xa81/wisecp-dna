@@ -21,7 +21,7 @@ $resp = $module->import_domain([$domain => ['user_id' => $user_id]]);
 
 echo Utility::jencode([
     'status'  => empty($resp) ? "successful" : "error",
-    'message' => $lang["success3"],
+    'message' => empty($resp) ? $lang["success3"] : $lang["error9"],
     'data'    => $resp
 ]);
 
