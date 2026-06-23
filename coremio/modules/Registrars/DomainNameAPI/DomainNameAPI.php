@@ -182,6 +182,7 @@ class DomainNameAPI {
 
             $check   = $this->api->GetResellerDetails();
 
+
             if($check["result"] != "OK"){
                 $this->error = $check["error"]["Details"];
             return false;
@@ -201,40 +202,74 @@ class DomainNameAPI {
             return false;
         }
 
- 
-        $response = $this->rememberCache(self::CACHE_KEY_DOMAIN_QUERY.md5(json_encode([$sld, $tlds])),function () use ($sld, $tlds){
+        if (!is_array($tlds)) {
+            $tlds = [$tlds];
+        }
+
+        // IDN domains must be queried in punycode form (see WISECP reference implementation)
+        if (function_exists('idn_to_ascii')) {
+            $sld = idn_to_ascii($sld, 0, INTL_IDNA_VARIANT_UTS46) ?: $sld;
+        }
+
+        $cacheKey = self::CACHE_KEY_DOMAIN_QUERY . md5(json_encode([$sld, $tlds]));
+
+        $response = $this->rememberCache($cacheKey, function () use ($sld, $tlds) {
             return $this->api->CheckAvailability([$sld], $tlds, 1, "create");
-        },self::QUERY_CACHE_TTL);
+        }, self::QUERY_CACHE_TTL);
 
-
+        // WISECP contract: status must be one of available|unavailable|unknown
         $result = [];
+        $lookup = [];
 
-        if (is_array($tlds) && count($tlds)) {
-            foreach ($tlds as $tld) {
-                $result[$tld] = [
-                    'status'  => "error",
-                    'message' => "something went wrong"
-                ];
+        foreach ($tlds as $tld) {
+            $result[$tld] = [
+                'status'  => 'unknown',
+                'premium' => false,
+            ];
+            $lookup[strtolower(ltrim($tld, '.'))] = $tld;
+        }
+
+        // API errors come back as ['result' => 'ERROR', 'error' => [...]] instead of a
+        // domain list; report them as unknown and drop them from the cache so a
+        // transient failure is not served for QUERY_CACHE_TTL.
+        if (!is_array($response) || isset($response['result']) || isset($response['error'])) {
+            $this->invalidateCache($cacheKey);
+
+            $error = is_array($response) ? ($response['error'] ?? null) : null;
+            if (is_array($error)) {
+                $this->error = trim(($error['Message'] ?? '') . ' : ' . ($error['Details'] ?? ''), ' :');
+            } elseif (is_string($error)) {
+                $this->error = $error;
             }
+            if (!$this->error) {
+                $this->error = 'Unknown error';
+            }
+
+            return $result;
         }
 
         foreach ($response as $domain) {
-            if (isset($domain['TLD'])) {
-                $tld                    = $domain["TLD"];
-                $result[$tld]['status'] = $domain["Status"] == "available" ? "available" : "unavailable";
-                unset($result[$tld]['message']);
+            if (!is_array($domain) || !isset($domain['TLD'])) {
+                continue;
+            }
 
-                if (isset($domain["IsFee"]) && $domain["IsFee"] === true) {
-                    $result[$tld]['premium']       = true;
-                    $result[$tld]['premium_price'] = [
-                        'amount'   => number_format($domain["Price"], 2, '.', ''),
-                        'currency' => $domain["Currency"],
-                    ];
-                }
+            $tld = $lookup[strtolower(ltrim($domain['TLD'], '.'))] ?? null;
+
+            if ($tld === null) {
+                continue;
+            }
+
+            $result[$tld]['status'] = $domain["Status"] == "available" ? "available" : "unavailable";
+
+            // SOAP may deliver IsFee as the strings "true"/"false" instead of booleans
+            if (filter_var($domain["IsFee"] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                $result[$tld]['premium']       = true;
+                $result[$tld]['premium_price'] = [
+                    'amount'   => number_format((float)($domain["Price"] ?? 0), 2, '.', ''),
+                    'currency' => $domain["Currency"] ?: 'USD',
+                ];
             }
         }
-
-
 
         return $result;
 
@@ -1405,14 +1440,15 @@ class DomainNameAPI {
             $domain        = $product["name"];
             $domainOptions = Utility::jdecode($product["options"], true);
 
+            if (!is_array($domainOptions)) {
+                $domainOptions = [];
+            }
+
             $domain_parse = Utility::domain_parser("http://" . $domain);
             $sld          = $domain_parse["host"];
             $tld          = $domain_parse["tld"];
 
-            Modules::save_log(self::LOGGING_CONFIG_NAME, __CLASS__, "Syncronisation", [
-                'domain'   => $domain,
-                'start_at' => date('Y-m-d H:i:s'),
-            ], []);
+            $start_at = date('Y-m-d H:i:s');
 
             $info = $this->get_info([
                 'domain' => $domain,
@@ -1420,19 +1456,19 @@ class DomainNameAPI {
                 'tld'    => $tld,
             ]);
 
-            if(isset($info['transferlock'])) {
+            // next_check must be written on failure too, otherwise findNextDomain()
+            // returns the same row forever and blocks the whole sync queue.
+            $domainOptions["next_check"] = time() + abs($totalDomains / $this->syncCount * 60) + $this->syncDelay;
+
+            if (isset($info['transferlock'])) {
                 $options = [
                     "domain"       => $domain,
                     "name"         => $sld,
                     "tld"          => $tld,
                     "dns_manage"   => true,
                     "whois_manage" => true,
-                    "next_check"   => time() + abs($totalDomains / $this->syncCount * 60) + $this->syncDelay
+                    "transferlock" => $info["transferlock"],
                 ];
-
-                if (isset($info["transferlock"])) {
-                    $options["transferlock"] = $info["transferlock"];
-                }
 
                 if (isset($info["cns"])) {
                     $options['cns_list'] = $info["cns"];
@@ -1461,14 +1497,26 @@ class DomainNameAPI {
                     $domainOptions[$k] = $v;
                 }
 
-                $domainOptions = Utility::jencode($domainOptions);
-
-                Models::$init->db->update("users_products", [
-                        'options' => $domainOptions,
-                    ])
-                 ->where("id", '=', $product['id'])
-                 ->save();
+                unset($domainOptions["sync_fail_count"], $domainOptions["sync_last_error"]);
+            } else {
+                $domainOptions["sync_fail_count"] = (int)($domainOptions["sync_fail_count"] ?? 0) + 1;
+                $domainOptions["sync_last_error"] = $this->error ?: 'Unknown error';
             }
+
+            Modules::save_log(self::LOGGING_CONFIG_NAME, __CLASS__, "Syncronisation", [
+                'domain'   => $domain,
+                'start_at' => $start_at,
+            ], [
+                'status'    => isset($info['transferlock']) ? 'success' : 'error',
+                'error'     => isset($info['transferlock']) ? null : ($this->error ?: 'Unknown error'),
+                'finish_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            Models::$init->db->update("users_products", [
+                    'options' => Utility::jencode($domainOptions),
+                ])
+             ->where("id", '=', $product['id'])
+             ->save();
 
         }
     }
