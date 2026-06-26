@@ -1706,6 +1706,18 @@ class DomainNameAPI {
         $cost_cid    = isset($this->config["settings"]["cost-currency"]) ? $this->config["settings"]["cost-currency"] : 4;
         $profit_rate = Config::get("options/domain-profit-rate");
 
+        // The registrar returns each TLD's prices in its own currency: the .tr
+        // family is billed in TRY while the rest are in USD. Map the API currency
+        // code (e.g. "USD", "TRY") to the local WISECP currency id so each cost is
+        // converted FROM its real source currency instead of being blindly treated
+        // as the configured cost-currency, which inflated .tr prices ~30x.
+        $currencyCidByCode = [];
+        foreach (Money::getCurrencies($cost_cid) as $cur) {
+            if (isset($cur["code"])) {
+                $currencyCidByCode[strtoupper($cur["code"])] = (int)$cur["id"];
+            }
+        }
+
         foreach ($response["data"] as $row) {
             if(is_array($selected_tlds) && count($selected_tlds)>0){
                 if($row["tld"]!='' && !in_array($row["tld"],$selected_tlds)){
@@ -1740,6 +1752,12 @@ class DomainNameAPI {
             $whois_privacy = 1;
             $module        = "DomainNameAPI";
 
+            // Resolve the real source currency id for each price type; fall back
+            // to the configured cost-currency when the code is missing/unconfigured.
+            $reg_src_cid = $currencyCidByCode[strtoupper($row["currencies"]["registration"] ?? '')] ?? $cost_cid;
+            $ren_src_cid = $currencyCidByCode[strtoupper($row["currencies"]["renew"] ?? '')] ?? $cost_cid;
+            $tra_src_cid = $currencyCidByCode[strtoupper($row["currencies"]["transfer"] ?? '')] ?? $cost_cid;
+
             $check = Models::$init->db->select()
                                       ->from("tldlist")
                                       ->where("name", "=", $name);
@@ -1759,10 +1777,11 @@ class DomainNameAPI {
                 $renewal_cost  = Money::deformatter($api_cost_prices["renewal"]);
                 $transfer_cost = Money::deformatter($api_cost_prices["transfer"]);
 
-                // ExChanges
-                $register_cost = Money::exChange($register_cost, $cost_cid, $tld_cid);
-                $renewal_cost  = Money::exChange($renewal_cost, $cost_cid, $tld_cid);
-                $transfer_cost = Money::exChange($transfer_cost, $cost_cid, $tld_cid);
+                // ExChanges — convert from each price's real source currency
+                // (USD for most, TRY for .tr) into the TLD's local price currency.
+                $register_cost = Money::exChange($register_cost, $reg_src_cid, $tld_cid);
+                $renewal_cost  = Money::exChange($renewal_cost, $ren_src_cid, $tld_cid);
+                $transfer_cost = Money::exChange($transfer_cost, $tra_src_cid, $tld_cid);
 
 
                 $reg_profit = Money::get_discount_amount($register_cost, $profit_rate);
@@ -1816,6 +1835,12 @@ class DomainNameAPI {
                 $register_cost = Money::deformatter($api_cost_prices["register"]);
                 $renewal_cost  = Money::deformatter($api_cost_prices["renewal"]);
                 $transfer_cost = Money::deformatter($api_cost_prices["transfer"]);
+
+                // Store the cost in the cost-currency, converting from the real
+                // source currency first (no-op when they already match, e.g. USD).
+                $register_cost = Money::exChange($register_cost, $reg_src_cid, $tld_cid);
+                $renewal_cost  = Money::exChange($renewal_cost, $ren_src_cid, $tld_cid);
+                $transfer_cost = Money::exChange($transfer_cost, $tra_src_cid, $tld_cid);
 
 
                 $reg_profit = Money::get_discount_amount($register_cost, $profit_rate);
