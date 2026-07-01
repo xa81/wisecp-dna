@@ -950,20 +950,11 @@ class DomainNameAPI {
         },rand((int)$this->domainCacheTTL*0.8,(int)$this->domainCacheTTL*2.5));
 
         if ($OrderDetails["result"] != "OK") {
-            // Alan adı bulunamadıysa veya başka hesaba transfer edildiyse
-            $error_message = $OrderDetails["error"]["Message"] ?? '';
-            $error_details = $OrderDetails["error"]["Details"] ?? '';
-
-            // Transfer edilmiş alan adı kontrolü
-            if (stripos($error_message, 'not found') !== false ||
-                stripos($error_details, 'not found') !== false ||
-                stripos($error_details, 'ERR_DOMAIN_NOT_FOUND') !== false) {
-                return [
-                    'status' => 'transferred'
-                ];
-            }
-
-            $this->error = $error_details;
+            // API hatası (ör. "not found" / ERR_DOMAIN_NOT_FOUND) bir transfer sinyali DEĞİLDİR.
+            // Geçici API kararsızlığında geçerli alan adları için de "not found" dönebilir;
+            // bunu "transferred" saymak WISECP'in aktif alan adlarını hatalı iptal etmesine yol açar.
+            // Gerçek transfer-out yalnızca aşağıdaki Status == "TransferredOut" (API kodu 4) ile tespit edilir.
+            $this->error = $OrderDetails["error"]["Details"] ?? ($OrderDetails["error"]["Message"] ?? '');
             return false;
         }
 
@@ -997,20 +988,11 @@ class DomainNameAPI {
         },rand((int)$this->domainCacheTTL*0.8,(int)$this->domainCacheTTL*2.5));
 
         if ($OrderDetails["result"] != "OK") {
-            // Alan adı bulunamadıysa veya başka hesaba transfer edildiyse
-            $error_message = $OrderDetails["error"]["Message"] ?? '';
-            $error_details = $OrderDetails["error"]["Details"] ?? '';
-
-            // Transfer edilmiş alan adı kontrolü
-            if (stripos($error_message, 'not found') !== false ||
-                stripos($error_details, 'not found') !== false ||
-                stripos($error_details, 'ERR_DOMAIN_NOT_FOUND') !== false) {
-                return [
-                    'status' => 'transferred'
-                ];
-            }
-
-            $this->error = $error_details;
+            // API hatası (ör. "not found" / ERR_DOMAIN_NOT_FOUND) bir transfer sinyali DEĞİLDİR.
+            // Geçici API kararsızlığında geçerli alan adları için de "not found" dönebilir;
+            // bunu "transferred" saymak WISECP'in aktif alan adlarını hatalı iptal etmesine yol açar.
+            // Gerçek transfer-out yalnızca aşağıdaki Status == "TransferredOut" (API kodu 4) ile tespit edilir.
+            $this->error = $OrderDetails["error"]["Details"] ?? ($OrderDetails["error"]["Message"] ?? '');
             return false;
         }
 
