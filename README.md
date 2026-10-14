@@ -18,11 +18,12 @@ Bu modül, WiseCP için geliştirilmiş bir 'domainnameapi.com' entegrasyonudur.
 
 > ⚠️ Yeşil **Code → Download ZIP** düğmesini **kullanmayın** — bu düğme ham geliştirme dalını indirir. Release paketleri sürümlenmiş, test edilmiş ve canlı kullanıma hazırdır.
 
+> ℹ️ Bu modül **WiseCP 3.x** içindir. **WiseCP 5** kullanıyorsanız: https://github.com/domainreseller/wisecp-dna-v5
+
 ## Gereksinimler
 
 - WiseCP'nin 3 ve üzeri sürümü gerekmektedir.
 - PHP'nin 7.4 ve üzeri sürümü gerekmektedir.
-- PHP Soap eklentisi etkinleştirilmelidir.
 
 ## Kurulum
 
@@ -39,24 +40,13 @@ Bu modül, WiseCP için geliştirilmiş bir 'domainnameapi.com' entegrasyonudur.
 
 ![Kurulum Ekran](https://github.com/domainreseller/wisecp-dna/assets/118720541/0cc8cca1-980e-4ae2-928a-28a809da87eb)
 
-### Bayi Kullanıcı Bilgileri
+### API Bilgileri
 
-1. Bayi kullanıcı adını ve şifresini girin.
+1. **Bayi ID (Reseller ID)** ve **API Anahtarı (API Key)** bilgilerinizi girin.
 2. "Kaydet" düğmesine tıklayın.
 
-## 🔑 API Bilgileri — Kullanıcı Adı/Şifre mi, Reseller ID/API Key mi?
-
-Her ikisi de desteklenir — bilgileri modüldeki aynı iki alana girin; modül hangi API'nin kullanılacağını otomatik olarak algılar:
-
-| Elinizdeki bilgi | "Kullanıcı Adı" alanı | "Şifre" alanı | Kullanılan API |
-|---|---|---|---|
-| **Yeni panel bilgileri** (önerilen) | Reseller ID — `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` formatında UUID | API Key | REST |
-| **Eski (legacy) bilgiler** | API kullanıcı adı | API şifresi | SOAP |
-
 > 💡 **Reseller ID** ve **API Key** bilgilerinizi DomainNameAPI panelinizde **API Ayarları** bölümünde bulabilirsiniz.
-> ⚠️ Bunlar **API bilgileridir** — panele giriş yaptığınız e-posta/şifre burada **ÇALIŞMAZ**; API Ayarları bölümündeki Reseller ID (UUID) ve API Key kullanılmalıdır.
-
-Ekstra bir yapılandırma gerekmez — kullanıcı adı alanında bir UUID varsa modül modern REST API'yi, aksi halde klasik SOAP'ı kullanır.
+> ⚠️ Bunlar **API bilgileridir** — panele giriş bilgileriniz (e-posta vb.) burada **ÇALIŞMAZ**.
 
 ### Bağlantıyı Test Etme
 

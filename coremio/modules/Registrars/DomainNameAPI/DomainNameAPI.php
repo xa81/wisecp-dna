@@ -171,7 +171,6 @@ class DomainNameAPI {
     /**
      * Set credentials
      * @return bool
-     * @throws SoapFault
      */
     private function set_credentials()
     {
@@ -299,7 +298,6 @@ class DomainNameAPI {
 
             $result[$tld]['status'] = $domain["Status"] == "available" ? "available" : "unavailable";
 
-            // SOAP may deliver IsFee as the strings "true"/"false" instead of booleans
             if (filter_var($domain["IsFee"] ?? false, FILTER_VALIDATE_BOOLEAN)) {
                 $result[$tld]['premium']       = true;
                 $result[$tld]['premium_price'] = [
@@ -1485,7 +1483,6 @@ class DomainNameAPI {
      * Get Domain List , deprecated!
      * @param $test
      * @return array|bool
-     * @throws SoapFault
      */
     public function domains($test = false) {
         if (!$test)

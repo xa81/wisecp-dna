@@ -7,7 +7,6 @@ if (!defined("CORE_FOLDER")) {
 $LANG = $module->lang;
 $CONFIG = $module->config;
 Helper::Load("Money");
-$soap_exists = class_exists("SoapClient");
 $periodicSync = $module->periodicSync;
 $syncCountList = $module->syncCountList;
 $syncDelayList = $module->syncDelayList;
@@ -36,19 +35,6 @@ $syncDelayList = $module->syncDelayList;
 
     <div id="dna-tab-detail" class="modules-tabs-content" style="display: block">
 
-        <?php
-        if (!$soap_exists) {
-        ?>
-        <div class="red-info">
-            <div class="padding10">
-                <?php
-                echo $LANG["error7"]; ?>
-            </div>
-        </div>
-        <?php
-        }
-        ?>
-
         <form action="<?php
         echo Controllers::$init->getData("links")["controller"]; ?>" method="post" id="DomainNameAPISettings">
             <input type="hidden" name="operation" value="module_controller">
@@ -70,28 +56,6 @@ $syncDelayList = $module->syncDelayList;
                 <div class="yuzde70">
                     <input type="password" name="password" value="<?php
                     echo $CONFIG["settings"]["password"] ? "*****" : ""; ?>">
-                </div>
-            </div>
-
-            <div class="formcon" style="display: none">
-                <div class="yuzde30"><?php
-                echo $LANG["fields"]["resellerid"]; ?></div>
-                <div class="yuzde70">
-                    <input type="text" name="resellerid" value="<?php
-                    echo $CONFIG["settings"]["resellerid"]; ?>">
-                </div>
-            </div>
-
-            <div class="formcon" style="display: none">
-                <div class="yuzde30"><?php
-                echo $LANG["fields"]["api-v2"]; ?></div>
-                <div class="yuzde70">
-                    <input<?php
-                    echo isset($CONFIG["settings"]["api-version"]) && $CONFIG["settings"]["api-version"] ? ' checked' : ''; ?> type="checkbox" name="api-version" value="1" id="DomainNameAPI_apiv2" class="checkbox-custom">
-                    <label class="checkbox-custom-label" for="DomainNameAPI_adp">
-                        <span class="kinfo"><?php
-                        echo $LANG["desc"]["api-v2"]; ?></span>
-                    </label>
                 </div>
             </div>
 

@@ -18,11 +18,12 @@ Deze module is een integratie van 'domainnameapi.com' voor WiseCP.
 
 > ⚠️ Gebruik **niet** de groene knop **Code → Download ZIP** — die downloadt de ruwe ontwikkelbranch. Release-pakketten zijn geversioneerd, getest en klaar voor productie.
 
+> ℹ️ Deze module is voor **WiseCP 3.x**. Voor **WiseCP 5**: https://github.com/domainreseller/wisecp-dna-v5
+
 ## Vereisten
 
 - WiseCP versie 3 of hoger is vereist.
 - PHP versie 7.4 of hoger is vereist.
-- De PHP Soap-extensie moet geactiveerd zijn.
 
 ## Installatie
 
@@ -38,24 +39,13 @@ Plaats de map "coremio" uit de gedownloade map in de map waar WISECP is geïnsta
 
 ![Screenshot van de installatie](https://github.com/domainreseller/wisecp-dna/assets/118720541/0cc8cca1-980e-4ae2-928a-28a809da87eb)
 
-### Informatie voor resellergebruiker
+### API-gegevens
 
-1. Voer de gebruikersnaam en wachtwoord van de reseller in.
+1. Voer uw **Reseller ID** en **API Key** in.
 2. Klik op de knop "Opslaan".
 
-## 🔑 API-gegevens — Gebruikersnaam/Wachtwoord of Reseller ID/API Key?
-
-Beide worden ondersteund — voer ze in dezelfde twee modulevelden in; de module detecteert automatisch welke API wordt gebruikt:
-
-| U heeft | Veld "Gebruikersnaam" | Veld "Wachtwoord" | Gebruikte API |
-|---|---|---|---|
-| **Nieuwe panelgegevens** (aanbevolen) | Reseller ID — UUID zoals `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` | API Key | REST |
-| **Oude (legacy) gegevens** | API-gebruikersnaam | API-wachtwoord | SOAP |
-
 > 💡 U vindt uw **Reseller ID** en **API Key** in uw DomainNameAPI-paneel onder **API-instellingen**.
-> ⚠️ Dit zijn **API-gegevens** — het e-mailadres en wachtwoord waarmee u op het paneel inlogt, werken hier **niet**.
-
-Er is geen extra configuratie nodig — als het gebruikersnaamveld een UUID bevat, gebruikt de module de moderne REST API, anders klassiek SOAP.
+> ⚠️ Dit zijn **API-gegevens** — uw inloggegevens voor het paneel werken hier **niet**.
 
 ### Verbinding testen
 

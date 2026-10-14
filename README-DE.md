@@ -18,11 +18,12 @@ Dieses Modul ist eine Integration von 'domainnameapi.com' für WiseCP.
 
 > ⚠️ Verwenden Sie **nicht** den grünen Button **Code → Download ZIP** — dieser lädt den rohen Entwicklungszweig herunter. Release-Pakete sind versioniert, getestet und produktionsbereit.
 
+> ℹ️ Dieses Modul ist für **WiseCP 3.x**. Für **WiseCP 5**: https://github.com/domainreseller/wisecp-dna-v5
+
 ## Voraussetzungen
 
 - WiseCP Version 3 oder höher wird benötigt.
 - PHP Version 7.4 oder höher wird benötigt.
-- Die PHP Soap-Erweiterung muss aktiviert sein.
 
 ## Installation
 
@@ -38,24 +39,13 @@ Verschieben Sie den Ordner "coremio" aus dem heruntergeladenen Ordner in den Ord
 
 ![Screenshot der Installation](https://github.com/domainreseller/wisecp-dna/assets/118720541/0cc8cca1-980e-4ae2-928a-28a809da87eb)
 
-### Informationen für den Wiederverkäuferbenutzer
+### API-Zugangsdaten
 
-1. Geben Sie den Benutzernamen und das Passwort des Wiederverkäufers ein.
+1. Geben Sie Ihre **Reseller ID** und Ihren **API Key** ein.
 2. Klicken Sie auf die Schaltfläche "Speichern".
 
-## 🔑 API-Zugangsdaten — Benutzername/Passwort oder Reseller ID/API Key?
-
-Beides wird unterstützt — tragen Sie die Daten in dieselben zwei Modulfelder ein; das Modul erkennt automatisch, welche API verwendet wird:
-
-| Sie haben | Feld "Benutzername" | Feld "Passwort" | Verwendete API |
-|---|---|---|---|
-| **Neue Panel-Zugangsdaten** (empfohlen) | Reseller ID — UUID wie `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` | API Key | REST |
-| **Alte (Legacy-)Zugangsdaten** | API-Benutzername | API-Passwort | SOAP |
-
 > 💡 Ihre **Reseller ID** und Ihren **API Key** finden Sie in Ihrem DomainNameAPI-Panel unter **API-Einstellungen**.
-> ⚠️ Dies sind **API-Zugangsdaten** — Ihre Panel-Login-E-Mail und das zugehörige Passwort funktionieren hier **nicht**.
-
-Es ist keine zusätzliche Konfiguration erforderlich — enthält das Benutzernamen-Feld eine UUID, verwendet das Modul die moderne REST-API, andernfalls klassisches SOAP.
+> ⚠️ Dies sind **API-Zugangsdaten** — Ihre Panel-Anmeldedaten funktionieren hier **nicht**.
 
 ### Verbindungstest
 

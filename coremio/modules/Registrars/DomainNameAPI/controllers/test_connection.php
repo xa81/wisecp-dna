@@ -7,14 +7,6 @@ if (!defined("CORE_FOLDER")) {
 
 $lang    = $module->lang;
 $config  = $module->config;
-$is_soap = class_exists("SoapClient");
-
-if (!$is_soap) {
-    die(Utility::jencode([
-        'status'  => "error",
-        'message' => $lang["error7"],
-    ]));
-}
 
 $username = Filter::init("POST/username", "hclear");
 $password = Filter::init("POST/password", "hclear");

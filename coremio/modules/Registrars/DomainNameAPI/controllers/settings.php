@@ -7,14 +7,6 @@ if (!defined("CORE_FOLDER")) {
 
 $lang           = $module->lang;
 $config         = $module->config;
-$soap_installed = class_exists("SoapClient");
-
-if (!$soap_installed) {
-    die(Utility::jencode([
-        'status'  => "error",
-        'message' => $lang["error7"],
-    ]));
-}
 
 $username = Filter::POST("username", "hclear");
 $password = Filter::POST("password", "hclear");
@@ -27,7 +19,6 @@ $test_mode      = Filter::POST("test-mode", "numbers");
 $adp            = Filter::POST("adp", "numbers");
 $cost_cid       = Filter::POST("cost-currency", "numbers");
 $exclude        = Filter::POST("exclude", "hclear");
-$api_version    = Filter::POST("api-version", "hclear");
 $sync_count     = Filter::POST("sync-count", "numbers");
 $sync_delay     = Filter::POST("sync-delay", "numbers");
 $periodic_sync  = Filter::POST("periodic-sync", "numbers");
@@ -56,10 +47,6 @@ if ((int)$test_mode != $config["settings"]["test-mode"]) {
 
 if ($adp != $config["settings"]["adp"]) {
     $sets["settings"]["adp"] = (bool)$adp == 1;
-}
-
-if ($api_version != $config["settings"]["api-version"]) {
-    $sets["settings"]["api-version"] = (bool)$api_version == 1;
 }
 
 if ($cost_cid !== false && (!isset($config["settings"]["cost-currency"]) || (int)$cost_cid != $config["settings"]["cost-currency"])) {

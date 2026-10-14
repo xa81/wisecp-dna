@@ -18,11 +18,12 @@ Bu modul, WiseCP üçün 'domainnameapi.com' inteqrasiyasıdır.
 
 > ⚠️ Yaşıl **Code → Download ZIP** düyməsini **istifadə etməyin** — bu düymə xam inkişaf (development) qolunu yükləyir. Release paketləri versiyalanmış, test edilmiş və istehsalata hazırdır.
 
+> ℹ️ Bu modul **WiseCP 3.x** üçündür. **WiseCP 5** istifadə edirsinizsə: https://github.com/domainreseller/wisecp-dna-v5
+
 ## Tələblər
 
 - WiseCP'nin 3 və ya daha yüksək versiyası tələb olunur.
 - PHP'nin 7.4 və ya daha yüksək versiyası tələb olunur.
-- PHP Soap əlavəsi aktiv olmalıdır.
 
 ## Quraşdırma
 
@@ -38,24 +39,13 @@ Yüklədiyiniz qovluqdakı "coremio" qovluğunu WISECP quraşdırıldığı qovl
 
 ![Quraşdırma Ekranı](https://github.com/domainreseller/wisecp-dna/assets/118720541/0cc8cca1-980e-4ae2-928a-28a809da87eb)
 
-### Bayi İstifadəçi Məlumatları
+### API Məlumatları
 
-1. Bayi istifadəçi adını və şifrəsini daxil edin.
+1. **Reseller ID** və **API Key** məlumatlarınızı daxil edin.
 2. "Yadda Saxla" düyməsinə klikləyin.
 
-## 🔑 API Məlumatları — İstifadəçi adı/Şifrə, yoxsa Reseller ID/API Key?
-
-Hər ikisi dəstəklənir — məlumatları modulda eyni iki sahəyə daxil edin; modul hansı API-nin istifadə olunacağını avtomatik müəyyən edir:
-
-| Sizdə olan | "İstifadəçi adı" sahəsi | "Şifrə" sahəsi | İstifadə olunan API |
-|---|---|---|---|
-| **Yeni panel məlumatları** (tövsiyə olunur) | Reseller ID — `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` formatında UUID | API Key | REST |
-| **Köhnə (legacy) məlumatlar** | API istifadəçi adı | API şifrəsi | SOAP |
-
 > 💡 **Reseller ID** və **API Key** məlumatlarınızı DomainNameAPI panelinizdə **API Parametrləri** bölməsində tapa bilərsiniz.
-> ⚠️ Bunlar **API məlumatlarıdır** — panelə giriş üçün istifadə etdiyiniz e-poçt və şifrə burada **işləməyəcək**.
-
-Əlavə konfiqurasiya tələb olunmur — istifadəçi adı sahəsində UUID varsa, modul müasir REST API-dən, əks halda klassik SOAP-dan istifadə edir.
+> ⚠️ Bunlar **API məlumatlarıdır** — panelə giriş məlumatlarınız burada **işləməyəcək**.
 
 ### Bağlantını Test Et
 
